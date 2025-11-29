@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>میری فیملی ٹری</title>
     <style>
-        /* CSS pichle version jaisa hi hai, ismein sirf naye modal aur buttons ke liye izafa hai */
+        /* CSS for RTL (Right-to-Left) and Styling */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
             margin: 0;
@@ -45,10 +45,10 @@
         }
 
         .delete-btn {
-            background-color: #dc3545; /* Red color for Delete */
+            background-color: #dc3545; /* Red for Delete */
         }
         .edit-btn {
-            background-color: #ffc107; /* Yellow color for Edit */
+            background-color: #ffc107; /* Yellow for Edit */
             color: #333;
         }
 
@@ -96,7 +96,7 @@
             box-shadow: 0 1px 3px rgba(0,0,0,0.08);
             margin-bottom: 5px;
             gap: 10px; 
-            width: fit-content; /* Card size adjust */
+            width: fit-content; 
         }
         
         .member-info {
@@ -187,7 +187,7 @@
         
         <section style="padding: 20px; background-color: white; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.05);">
             <div class="form-group"><label for="memberName">نام:</label><input type="text" id="memberName"></div>
-            <div class="form-group"><label for="memberDob">تاریخ پیدائش:</label><input type="text" id="memberDob" placeholder="YYYY"></div>
+            <div class="form-group"><label for="memberDob">تاریخ پیدائش/سال:</label><input type="text" id="memberDob" placeholder="YYYY"></div>
             <div class="form-group"><label for="memberPic">تصویر اپ لوڈ کریں:</label><input type="file" id="memberPic" accept="image/*"></div>
             <div class="form-group"><label for="memberParentId">والد کی ID (پہلے ممبر کے لیے 0):</label><input type="text" id="memberParentId" placeholder="مثلاً: کوئی ID"></div>
             
@@ -212,7 +212,7 @@
         <input type="hidden" id="editOldPicUrl"> 
         
         <div class="form-group"><label for="editName">نام:</label><input type="text" id="editName"></div>
-        <div class="form-group"><label for="editDob">تاریخ پیدائش:</label><input type="text" id="editDob"></div>
+        <div class="form-group"><label for="editDob">تاریخ پیدائش/سال:</label><input type="text" id="editDob"></div>
         <div class="form-group"><label for="editParentId">والد کی ID:</label><input type="text" id="editParentId"></div>
         <div class="form-group">
             <label for="editPic">تصویر تبدیل کریں (اختیاری):</label>
@@ -227,16 +227,9 @@
     </div>
 
 
-
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <script>
-        //... Yahin par aapka ERROR aata hai kyunki 'supabase' abhi tak load nahi hua
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); 
-        //...
-    
-
-     src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
-
         // ==================================================================
         // **!!! APKI SUPABASE CONFIGURATION !!!**
         // ==================================================================
@@ -245,8 +238,9 @@
         const SUPABASE_URL = 'https://pqednxysbdtcnemowtvv.supabase.co';
 
         // Aapki Public Anon Key
-        const SUPABASE_ANON_KEY = 'EyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBxZWRueHlzYmR0Y25lbW93dHZ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQzMjM1NjYsImV4cCI6MjA3OTg5OTU2Nn0.5VyOnx7vEK_OWpLTetbuXukmbJfw1SjbHw7yhXPvE64'; 
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBxZWRueHlzYmR0Y25lbW93dHZ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQzMjM1NjYsImV4cCI6MjA3OTg5OTU2Nn0.5VyOnx7vEK_OWpLTetbuXukmbJfw1SjbHw7yhXPvE64'
         
+        // Client Initialization
         const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         // ------------------------------------------------------------------
@@ -266,15 +260,15 @@
         });
         
         // ==================================================================
-        // ADMIN & INITIALIZATION FUNCTIONS (Naam Badalna)
+        // ADMIN & INITIALIZATION FUNCTIONS 
         // ==================================================================
 
-        // ... (loadSiteName, changeSiteName, handleAdminAction functions wahi hain)
         async function loadSiteName() {
             const { data, error } = await supabase.from(SETTINGS_TABLE).select('site_name').eq('id', SITE_CONFIG_DOC_ID).single();
             if (data && data.site_name) {
                 siteNameElement.textContent = data.site_name;
             } else {
+                // Agar data na mile to default naam set kar ke database mein daal dein
                 siteNameElement.textContent = defaultName;
                 await changeSiteName(defaultName); 
             }
@@ -285,7 +279,7 @@
             const { error } = await supabase.from(SETTINGS_TABLE).upsert([{ id: SITE_CONFIG_DOC_ID, site_name: newName.trim() }]);
             if (error) {
                 console.error("Naam update karne mein error:", error);
-                alert("Naam tabdeel nahi ho saka.");
+                alert("Naam tabdeel nahi ho saka. RLS policy check karein.");
             } else {
                 siteNameElement.textContent = newName.trim();
                 alert(`Web site ka naam kamyabi se tabdeel ho kar "${newName.trim()}" ho gaya hai.`);
@@ -317,14 +311,16 @@
         }
 
         async function deleteImage(picUrl) {
-            if (!picUrl || picUrl.includes('placeholder.com')) return; // Placeholder ko delete na karein
+            if (!picUrl || picUrl.includes('placeholder.com')) return; 
 
             // Supabase URL se sirf file path nikalein
             const urlParts = picUrl.split('/public/');
             if (urlParts.length > 1) {
                 const filePath = urlParts[1];
+                // Yahan 'member-pics' bucket ka naam explicit dena zaroori nahi hota, par humne storage client mein set kiya hua hai.
                 const { error } = await supabase.storage.from(STORAGE_BUCKET).remove([filePath]);
                 if (error) {
+                    // Agar delete mein error aaye to sirf console mein dikhayein, data delete hone se na rokein
                     console.error("Purani tasveer delete karne mein error:", error.message);
                 }
             }
@@ -335,7 +331,6 @@
         // ==================================================================
 
         async function addFamilyMember() {
-            // Logic wahi hai, sirf Update/Delete ke liye jagah bana di gayi hai
             const name = document.getElementById('memberName').value.trim();
             const dob = document.getElementById('memberDob').value.trim();
             const parentIdInput = document.getElementById('memberParentId').value.trim();
@@ -352,7 +347,7 @@
 
             try {
                 const picUrl = await uploadImage(imageFile); 
-                const parentId = parentIdInput === '0' ? null : parentIdInput;
+                const parentId = parentIdInput === '0' || parentIdInput === '' ? null : parentIdInput;
 
                 const newMemberData = {
                     name: name,
@@ -367,14 +362,17 @@
                 
                 alert(`Naya member kamyabi se shamil ho gaya hai.`);
                 
+                // Form saaf karein
                 document.getElementById('memberName').value = '';
                 document.getElementById('memberDob').value = '';
                 document.getElementById('memberPic').value = '';
+                document.getElementById('memberParentId').value = '';
+
                 loadFamilyTree(); 
 
             } catch (error) {
                 console.error("Member shamil karne mein ya upload mein error:", error.message);
-                alert(`Error aa gaya: ${error.message}.`);
+                alert(`Error aa gaya: ${error.message}. Kripya Supabase RLS Policies check karein.`);
             } finally {
                 addButton.disabled = false;
                 addButton.textContent = 'ممبر کو ڈیٹا بیس میں محفوظ کریں';
@@ -389,13 +387,14 @@
             editModal.style.display = 'none';
         }
 
+        // Jab user "Edit" button dabata hai
         function openEditModal(id, name, dob, parent_id, pic_url) {
             document.getElementById('editMemberId').value = id;
             document.getElementById('editName').value = name;
             document.getElementById('editDob').value = dob;
-            document.getElementById('editParentId').value = parent_id || '0';
+            document.getElementById('editParentId').value = parent_id || '0'; // Agar null ho to 0 dikhayein
             document.getElementById('editOldPicUrl').value = pic_url;
-            document.getElementById('editPic').value = ''; // Input file ko saaf karein
+            document.getElementById('editPic').value = ''; 
             editModal.style.display = 'block';
         }
 
@@ -426,7 +425,7 @@
                     newPicUrl = await uploadImage(newImageFile);
                 }
 
-                const newParentId = newParentIdInput === '0' ? null : newParentIdInput;
+                const newParentId = newParentIdInput === '0' || newParentIdInput === '' ? null : newParentIdInput;
 
                 const updatedData = {
                     name: newName,
@@ -445,11 +444,11 @@
 
                 alert(`Member ID ${id} ka data kamyabi se tabdeel ho gaya hai.`);
                 closeEditModal();
-                loadFamilyTree(); // Tree ko refresh karein
+                loadFamilyTree(); 
 
             } catch (error) {
                 console.error("Update karne mein error:", error.message);
-                alert(`Error aa gaya: ${error.message}.`);
+                alert(`Error aa gaya: ${error.message}. Update policies check karein.`);
             } finally {
                 updateButton.disabled = false;
                 updateButton.textContent = 'تبدیلی محفوظ کریں (Save Changes)';
@@ -478,11 +477,11 @@
                 if (error) throw error;
                 
                 alert(`${name} ka data kamyabi se delete ho gaya hai.`);
-                loadFamilyTree(); // Tree ko refresh karein
+                loadFamilyTree(); 
 
             } catch (error) {
                 console.error("Delete karne mein error:", error.message);
-                alert(`Error aa gaya: ${error.message}.`);
+                alert(`Error aa gaya: ${error.message}. Delete policies check karein.`);
             }
         }
         
@@ -497,7 +496,7 @@
 
             if (error) {
                 console.error("Family Tree load karne mein error:", error);
-                treeContainer.innerHTML = '<p style="color:red;">Data load nahi ho saka. Policies check karein.</p>';
+                treeContainer.innerHTML = '<p style="color:red;">Data load nahi ho saka. (RLS Policies ya Table Structure check karein).</p>';
                 return;
             }
 
@@ -515,7 +514,7 @@
                     treeContainer.innerHTML += generateHtmlForNode(rootMember);
                 });
             } else {
-                treeContainer.innerHTML = '<p>Data base mein koi family member maujood nahi hai.</p>';
+                treeContainer.innerHTML = '<p>Data base mein koi family member maujood nahi hai. Naya member shamil karein.</p>';
             }
         }
 
@@ -527,22 +526,27 @@
                 map[member.id] = member;
             });
             members.forEach(member => {
+                // Check for valid parent_id and parent exists in map
                 if (member.parent_id && map[member.parent_id]) {
                     map[member.parent_id].children.push(member);
                 } else {
+                    // Root member ya jinka parent ID invalid hai
                     tree.push(member);
                 }
             });
             return tree;
         }
 
-        // HTML generate karne ka function - Buttons ke saath update kiya gaya hai
+        // HTML generate karne ka function - Edit aur Delete Buttons ke saath
         function generateHtmlForNode(member) {
             let html = '';
             
-            // Delete aur Edit ke buttons member ke data par click karne ke liye tayyar hain
-            const editFunction = `openEditModal('${member.id}', '${member.name.replace(/'/g, "\\'")}', '${member.dob}', '${member.parent_id || ''}', '${member.pic_url}')`;
-            const deleteFunction = `deleteMember('${member.id}', '${member.pic_url}', '${member.name.replace(/'/g, "\\'")}')`;
+            // Safety measure: Single quotes ko escape karein for JS function calls
+            const safeName = member.name.replace(/'/g, "\\'"); 
+            
+            // EDIT and DELETE functions call
+            const editFunction = `openEditModal('${member.id}', '${safeName}', '${member.dob}', '${member.parent_id || ''}', '${member.pic_url}')`;
+            const deleteFunction = `deleteMember('${member.id}', '${member.pic_url}', '${safeName}')`;
 
             html += `<div class="member-node">`;
             html += `   <div class="member-card">`;
@@ -557,6 +561,7 @@
 
             if (member.children.length > 0) {
                 html += `<ul class="children-list">`;
+                // Sort children by ID or DOB if needed
                 member.children.forEach(child => {
                     html += `<li>${generateHtmlForNode(child)}</li>`;
                 });

@@ -19,12 +19,42 @@
         .site-title { font-size: 20px; font-weight: bold; color: #ffd700; text-shadow: 1px 1px 2px #000; }
         .admin-btn { background-color: #e74c3c; color: white; border: none; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-weight: bold; text-decoration: none; font-size: 11px; }
 
-        /* NAVBAR */
-        .navbar { background: #34495e; padding: 5px; display: flex; justify-content: space-around; align-items: center; }
-        .nav-btn { background: none; border: none; color: #bdc3c7; display: flex; flex-direction: column; align-items: center; text-decoration: none; font-size: 10px; cursor: pointer; transition: 0.3s; }
-        .nav-btn i { font-size: 16px; margin-bottom: 2px; color: #bdc3c7; }
+        /* --- UPDATED NAVBAR (Side-by-Side) --- */
+        .navbar { 
+            background: #34495e; 
+            padding: 8px 5px; /* Padding adjust ki */
+            display: flex; 
+            justify-content: space-around; /* Barabar phailay hue */
+            align-items: center; 
+        }
+        
+        .nav-btn { 
+            background: none; 
+            border: none; 
+            color: #bdc3c7; 
+            display: flex; 
+            flex-direction: row; /* YAHAN CHANGE KIYA: Row (Line) mein kar diya */
+            align-items: center; /* Center align */
+            text-decoration: none; 
+            font-size: 12px; /* Font size */
+            cursor: pointer; 
+            transition: 0.3s;
+            padding: 5px 8px;
+            border-radius: 15px; /* Thoda gol background hover par */
+        }
+        
+        .nav-btn i { 
+            font-size: 16px; 
+            margin-right: 6px; /* Icon ke aage faasla diya text ke liye */
+            color: #bdc3c7; 
+            margin-bottom: 0; /* Neeche ka margin hataya */
+        }
+        
         .nav-btn.active i, .nav-btn:hover i { color: #ffd700; }
-        .nav-btn.active, .nav-btn:hover { color: white; }
+        .nav-btn.active, .nav-btn:hover { 
+            color: white; 
+            background: rgba(255,255,255,0.1); /* Hover par halka background */
+        }
 
         /* DROPDOWN */
         .dropdown { position: relative; display: inline-block; }
@@ -32,38 +62,34 @@
         .dropdown-content a { color: #333; padding: 10px 14px; text-decoration: none; display: block; border-bottom: 1px solid #f1f1f1; font-size: 13px; text-align: left; }
         .show { display: block; }
 
-        /* --- COMPACT TREE NODE CONTAINER --- */
+        /* COMPACT TREE NODE CONTAINER */
         .tree-node-container {
             background: white;
             width: 80%;
             max-width: 300px;
-            margin: 30px auto; /* Upar se faasla */
-            padding: 15px;      /* Andar ka faasla kam kiya (Height kam karne ke liye) */
+            margin: 30px auto;
+            padding: 15px;
             border-radius: 15px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.08);
             position: relative; 
             border: 1px solid #f0f0f0;
         }
-        
-        h3 { margin-top: 0; margin-bottom: 10px; color: #2c3e50; font-size: 16px; } /* Heading choti ki */
-        
-        /* Input ki height aur margin kam kiya */
+        h3 { margin-top: 0; margin-bottom: 10px; color: #2c3e50; font-size: 16px; }
         input { width: 100%; padding: 8px; margin: 5px 0; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; box-sizing: border-box; outline: none; }
         input:focus { border-color: #3ecf8e; }
 
-        /* File Upload Label Compact */
         .file-label {
             display: block; margin: 5px 0; cursor: pointer; 
             background: #f8f9fa; padding: 8px; border-radius: 8px; 
             color: #666; font-size: 12px; border: 1px dashed #ccc;
         }
 
-        /* --- SMALL BUTTON --- */
+        /* SMALL BUTTON */
         .add-btn-circle {
             background: #3ecf8e;
             color: white;
             border: none;
-            width: 40px;   /* Aur chota kiya */
+            width: 40px;
             height: 40px; 
             border-radius: 50%;
             font-size: 18px; 
@@ -71,7 +97,7 @@
             box-shadow: 0 3px 8px rgba(62, 207, 142, 0.4);
             display: flex; justify-content: center; align-items: center;
             position: absolute;
-            bottom: -20px; /* Bilkul edge par */
+            bottom: -20px;
             left: 50%;
             transform: translateX(-50%);
             transition: all 0.3s ease;
@@ -79,10 +105,7 @@
         .add-btn-circle:hover { background: #34b27b; transform: translateX(-50%) scale(1.1); }
         .add-btn-circle:disabled { background: #ccc; }
 
-        /* STATUS & SAVED DATA */
         #status { margin-top: 20px; color: #555; font-size: 11px; font-weight: bold; margin-bottom: 0; }
-        
-        /* Saved Node Compact */
         .saved-node { margin-top: 25px; padding-top: 10px; border-top: 1px dashed #eee; }
         #savedImage { width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 2px solid #3ecf8e; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 3px; }
         #savedName { color: #2c3e50; font-weight: bold; font-size: 14px; margin: 0; }
@@ -100,7 +123,9 @@
         <a href="index.html" class="nav-btn active"><i class="fa-solid fa-house"></i> Home</a>
         <a href="#" class="nav-btn"><i class="fa-solid fa-sitemap"></i> Shajra</a>
         <a href="#" class="nav-btn"><i class="fa-solid fa-images"></i> Gallery</a>
+        
         <a href="#" class="nav-btn"><i class="fa-solid fa-magnifying-glass"></i> Search</a>
+
         <div class="dropdown">
             <button onclick="toggleMenu()" class="nav-btn"><i class="fa-solid fa-bars"></i> More</button>
             <div id="myDropdown" class="dropdown-content">
@@ -113,20 +138,15 @@
 
     <div class="tree-node-container">
         <h3>Naya Member</h3>
-        
         <input type="text" id="nameInput" placeholder="Naam likhein...">
-        
         <label for="imageInput" class="file-label">
             <i class="fa-solid fa-camera"></i> Tasveer Chunein
             <input type="file" id="imageInput" accept="image/*" style="display: none;">
         </label>
-
         <button onclick="uploadData()" id="btn" class="add-btn-circle">
             <i class="fa-solid fa-plus"></i>
         </button>
-        
         <p id="status"></p>
-        
         <div class="saved-node" id="displayArea" style="display: none;">
             <img id="savedImage" src="" alt="Saved Image">
             <h2 id="savedName"></h2>
@@ -151,22 +171,16 @@
             const file = document.getElementById('imageInput').files[0];
             const btn = document.getElementById('btn');
             const status = document.getElementById('status');
-
             if (!name || !file) { alert("Naam aur Image zaroori hai!"); return; }
-
-            btn.disabled = true;
-            status.innerText = ""; btn.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i>"; // Text hataya, sirf spinner
-
+            btn.disabled = true; status.innerText = ""; btn.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i>";
             try {
                 const fileName = Date.now() + "_" + file.name.replace(/\s/g, '');
                 const { error: imgErr } = await _supabase.storage.from('family-images').upload(fileName, file); if (imgErr) throw imgErr;
                 const { data: urlData } = _supabase.storage.from('family-images').getPublicUrl(fileName);
-                status.innerText = "Saving...";
                 const { error: dbErr } = await _supabase.from('family_data').insert([{ full_name: name, image_url: urlData.publicUrl }]); if (dbErr) throw dbErr;
                 alert("Saved!"); location.reload();
-            } catch (err) { alert(err.message); status.innerText = ""; } finally { btn.disabled = false; btn.innerHTML = "<i class='fa-solid fa-plus'></i>"; }
+            } catch (err) { alert(err.message); } finally { btn.disabled = false; btn.innerHTML = "<i class='fa-solid fa-plus'></i>"; }
         }
-
         async function loadLastEntry() {
             const { data } = await _supabase.from('family_data').select('*').order('id', { ascending: false }).limit(1);
             if (data && data[0]) {

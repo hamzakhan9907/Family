@@ -3,141 +3,130 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Permanent Save Site</title>
+    <title>Family Site - Supabase</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f0f2f5;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
-        }
-        .container {
-            background-color: white;
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            text-align: center;
-            width: 100%;
-            max-width: 350px;
-        }
-        h3 { color: #333; margin-bottom: 20px; }
-        
-        input {
-            width: 90%;
-            padding: 12px;
-            margin: 10px 0;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-size: 16px;
-        }
-        
-        /* Save Button Design */
-        button.delete-btn {
-            background-color: #ff4b4b;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-top: 10px;
-            font-size: 14px;
-        }
-
-        .result {
-            margin-top: 25px;
-            border-top: 2px dashed #bbb;
-            padding-top: 15px;
-        }
-        #showName {
-            color: #2c3e50;
-            font-size: 22px;
-            font-weight: bold;
-            text-transform: capitalize;
-            margin-bottom: 10px;
-        }
-        #showImage {
-            max-width: 100%;
-            max-height: 300px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            display: none;
-        }
+        body { font-family: sans-serif; text-align: center; padding: 20px; background: #f0f8ff; }
+        .container { background: white; max-width: 400px; margin: auto; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        input { width: 90%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; }
+        button { background: #3ecf8e; color: white; border: none; padding: 12px 25px; cursor: pointer; border-radius: 5px; font-weight: bold; }
+        button:hover { background: #34b27b; }
+        img { max-width: 100%; margin-top: 15px; border-radius: 8px; display: none; border: 2px solid #ddd; }
+        #status { margin-top: 10px; color: #555; font-size: 14px; }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h3>Permanent Profile Card</h3>
+        <h3>Family Tree Upload (Supabase)</h3>
         
-        <input type="text" id="nameInput" placeholder="Naam likhein aur save ho jayega..." oninput="saveData()">
+        <input type="text" id="nameInput" placeholder="Naam likhein...">
+        <input type="file" id="imageInput" accept="image/*">
         
-        <input type="file" id="imageInput" accept="image/*" onchange="saveImage()">
+        <button onclick="uploadData()" id="btn">Upload & Save</button>
+        <p id="status"></p>
 
-        <div class="result">
-            <h2 id="showName"></h2>
-            <img id="showImage" src="" alt="Profile Photo">
-            <br>
-            <button onclick="clearData()" class="delete-btn">Delete Data</button>
+        <hr>
+        
+        <div id="displayArea">
+            <h2 id="savedName">Loading...</h2>
+            <img id="savedImage" src="" alt="Saved Image">
         </div>
     </div>
 
     <script>
-        // 1. Page load hote hi purana data check karo
-        window.onload = function() {
-            var savedName = localStorage.getItem("myName");
-            var savedImage = localStorage.getItem("myImage");
+        // --- SETTINGS (Yahan apna URL aur KEY paste karein) ---
+        const supabaseUrl = 'https://ojphjodmpyblyfyinacb.supabase.co
+';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qcGhqb2Rparameter is either empty or invalid.24iLCJpYXQiOjE3NjQ0MTUwNTAsImV4cCI6MjA3OTk5MTA1MH0.mwKu_g5_OT_89KcAeeSsY8IMlnakV2nQVtKRhWWTcDw
+';
+        
+        // Supabase Start
+        const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-            if (savedName) {
-                document.getElementById("nameInput").value = savedName;
-                document.getElementById("showName").innerText = savedName;
+        // Upload Function
+        async function uploadData() {
+            const name = document.getElementById('nameInput').value;
+            const fileInput = document.getElementById('imageInput');
+            const file = fileInput.files[0];
+            const status = document.getElementById('status');
+            const btn = document.getElementById('btn');
+
+            if (!name || !file) {
+                alert("Please naam aur image dono select karein!");
+                return;
             }
 
-            if (savedImage) {
-                var img = document.getElementById("showImage");
-                img.src = savedImage;
-                img.style.display = "block";
-            }
-        };
+            btn.disabled = true;
+            status.innerText = "Photo upload ho rahi hai...";
 
-        // 2. Naam save karne ka function
-        function saveData() {
-            var name = document.getElementById("nameInput").value;
-            document.getElementById("showName").innerText = name;
-            // LocalStorage mein save karo
-            localStorage.setItem("myName", name);
-        }
+            try {
+                // 1. Image ka unique naam banao
+                const fileName = Date.now() + "_" + file.name;
 
-        // 3. Image save karne ka function
-        function saveImage() {
-            var file = document.getElementById("imageInput").files[0];
-            var reader = new FileReader();
+                // 2. Image Upload karo ('family-images' bucket mein)
+                const { data: imgData, error: imgError } = await _supabase
+                    .storage
+                    .from('family-images')
+                    .upload(fileName, file);
 
-            reader.onloadend = function() {
-                var img = document.getElementById("showImage");
-                var base64String = reader.result;
+                if (imgError) throw imgError;
+
+                // 3. Image ka Public URL lo
+                const { data: urlData } = _supabase
+                    .storage
+                    .from('family-images')
+                    .getPublicUrl(fileName);
                 
-                img.src = base64String;
-                img.style.display = "block";
+                const finalImageUrl = urlData.publicUrl;
+
+                status.innerText = "Database mein save ho raha hai...";
+
+                // 4. Naam aur Image URL Table mein save karo ('family_data' table)
+                const { error: dbError } = await _supabase
+                    .from('family_data')
+                    .insert([
+                        { full_name: name, image_url: finalImageUrl }
+                    ]);
+
+                if (dbError) throw dbError;
+
+                status.innerText = "Success! Data save ho gaya.";
+                alert("Upload Successful!");
                 
-                // Image ko text bana kar save karo
-                localStorage.setItem("myImage", base64String);
-            }
+                // Naya data show karo
+                loadLastEntry();
 
-            if (file) {
-                reader.readAsDataURL(file);
+            } catch (err) {
+                console.error(err);
+                status.innerText = "Error: " + err.message;
+            } finally {
+                btn.disabled = false;
             }
         }
 
-        // 4. Data delete karne ka function
-        function clearData() {
-            localStorage.removeItem("myName");
-            localStorage.removeItem("myImage");
-            location.reload(); // Page refresh karo
+        // Data Read Function (Aakhri entry dikhane ke liye)
+        async function loadLastEntry() {
+            // Sabse aakhri entry uthao
+            const { data, error } = await _supabase
+                .from('family_data')
+                .select('*')
+                .order('id', { ascending: false }) // Sabse naya upar
+                .limit(1);
+
+            if (data && data.length > 0) {
+                document.getElementById('savedName').innerText = data[0].full_name;
+                const img = document.getElementById('savedImage');
+                img.src = data[0].image_url;
+                img.style.display = 'block';
+            } else {
+                document.getElementById('savedName').innerText = "Koi data nahi mila.";
+            }
         }
+
+        // Page load hone par data laye
+        loadLastEntry();
+
     </script>
 
 </body>

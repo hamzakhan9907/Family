@@ -8,79 +8,78 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-        body { font-family: sans-serif; margin: 0; padding: 0; background: #f0f8ff; text-align: center; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background: #f8f9fa; text-align: center; }
         
-        /* HEADER STYLE */
+        /* HEADER */
         header {
-            background-color: #2c3e50; 
-            color: white; 
-            padding: 15px 10px;
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-            border-bottom: 2px solid #d4af37;
+            background-color: #2c3e50; color: white; padding: 10px 15px;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
-        .site-title { 
-            font-size: 24px; font-weight: bold; margin: 0;
-            color: #ffd700; font-family: 'Georgia', serif; 
-            text-shadow: 2px 2px 4px #000000; letter-spacing: 1px;
-        }
+        .site-title { font-size: 22px; font-weight: bold; color: #ffd700; text-shadow: 1px 1px 2px #000; }
+        .admin-btn { background-color: #e74c3c; color: white; border: none; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-weight: bold; text-decoration: none; }
 
-        /* --- MENU BAR STYLE (NEW) --- */
-        .menu-container {
-            background: #34495e; /* Thoda light blue */
-            overflow-x: auto; /* Side scrolling on mobile */
-            white-space: nowrap;
-            padding: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            -webkit-overflow-scrolling: touch; /* Smooth scroll */
-        }
-        /* Scrollbar chupane ke liye */
-        .menu-container::-webkit-scrollbar { display: none; }
+        /* NAVBAR (Compact) */
+        .navbar { background: #34495e; padding: 8px; display: flex; justify-content: space-around; align-items: center; }
+        .nav-btn { background: none; border: none; color: #bdc3c7; display: flex; flex-direction: column; align-items: center; text-decoration: none; font-size: 11px; cursor: pointer; transition: 0.3s; }
+        .nav-btn i { font-size: 18px; margin-bottom: 3px; color: #bdc3c7; }
+        .nav-btn.active i, .nav-btn:hover i { color: #ffd700; }
+        .nav-btn.active, .nav-btn:hover { color: white; }
 
-        .menu-btn {
-            display: inline-flex;
-            flex-direction: column;
-            align-items: center;
+        /* DROPDOWN */
+        .dropdown { position: relative; display: inline-block; }
+        .dropdown-content { display: none; position: absolute; right: 0; top: 45px; background-color: #fff; min-width: 160px; box-shadow: 0px 8px 16px rgba(0,0,0,0.2); z-index: 10; border-radius: 8px; border: 1px solid #eee; }
+        .dropdown-content a { color: #333; padding: 12px 16px; text-decoration: none; display: block; border-bottom: 1px solid #f1f1f1; font-size: 14px; text-align: left; }
+        .dropdown-content a:hover { background-color: #f9f9f9; }
+        .show { display: block; }
+
+        /* --- NEW TREE NODE STYLE CONTAINER --- */
+        .tree-node-container {
+            background: white;
+            width: 90%;
+            max-width: 350px;
+            margin: 40px auto;
+            padding: 25px;
+            border-radius: 25px; /* Gol corners */
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1); /* Soft shadow */
+            position: relative; /* Button positioning ke liye */
+        }
+        h3 { margin-top: 0; color: #2c3e50; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 2px solid #eee; border-radius: 12px; font-size: 16px; box-sizing: border-box; outline: none; transition: 0.3s; }
+        input:focus { border-color: #3ecf8e; }
+
+        /* --- NEW CIRCULAR + BUTTON STYLE --- */
+        .add-btn-circle {
+            background: #3ecf8e; /* Green color */
+            color: white;
+            border: none;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%; /* Gol button */
+            font-size: 30px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(62, 207, 142, 0.4);
+            display: flex;
             justify-content: center;
-            background: rgba(255, 255, 255, 0.1);
-            color: #fff;
-            text-decoration: none;
-            margin: 0 5px;
-            padding: 10px 15px;
-            border-radius: 10px;
-            border: 1px solid #d4af37; /* Gold Border */
-            min-width: 60px;
+            align-items: center;
+            /* Positioning the button */
+            position: absolute;
+            bottom: -30px; /* Aadha bahar nikla hua */
+            left: 50%;
+            transform: translateX(-50%);
             transition: all 0.3s ease;
         }
+        .add-btn-circle:hover { background: #34b27b; transform: translateX(-50%) scale(1.1); }
+        .add-btn-circle:disabled { background: #ccc; box-shadow: none; cursor: not-allowed; }
 
-        .menu-btn:hover {
-            background: #ffd700; /* Gold Background on Hover */
-            color: #2c3e50; /* Blue Text */
-            transform: translateY(-3px); /* Thoda upar uthega */
-        }
+        /* Loading Status */
+        #status { margin-top: 35px; color: #555; font-size: 14px; font-weight: bold; }
 
-        .menu-btn i {
-            font-size: 20px;
-            margin-bottom: 5px;
-        }
-
-        .menu-text {
-            font-family: 'Courier New', monospace; /* Stylish Font */
-            font-size: 12px;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-        /* -------------------------- */
-
-        .container { background: white; max-width: 400px; margin: 20px auto; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        input { width: 90%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
-        .upload-btn { background: #3ecf8e; color: white; border: none; padding: 12px 25px; cursor: pointer; border-radius: 5px; font-weight: bold; margin-top: 10px; width: 100%; font-size: 16px; }
-        .upload-btn:disabled { background: #ccc; }
-        img { max-width: 100%; margin-top: 15px; border-radius: 8px; display: none; border: 2px solid #ddd; }
-        #status { margin-top: 10px; color: #555; font-size: 14px; font-weight: bold; }
-        #savedName { color: #2c3e50; text-transform: uppercase; margin-bottom: 5px; }
+        /* Saved Area Style */
+        .saved-node { margin-top: 40px; padding-top: 20px; border-top: 2px dashed #eee; }
+        #savedImage { width: 100px; height: 100px; object-fit: cover; border-radius: 50%; border: 3px solid #3ecf8e; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 10px; }
+        #savedName { color: #2c3e50; font-weight: bold; margin: 0; }
 
     </style>
 </head>
@@ -88,90 +87,58 @@
 
     <header>
         <div class="site-title" id="mainTitle">Loading...</div>
-        </header>
+        <a href="admin.html" class="admin-btn">Admin</a>
+    </header>
 
-    <div class="menu-container">
-        <a href="index.html" class="menu-btn">
-            <i class="fa-solid fa-house"></i>
-            <span class="menu-text">Home</span>
-        </a>
-        
-        <a href="#" class="menu-btn">
-            <i class="fa-solid fa-sitemap"></i>
-            <span class="menu-text">Shajra</span>
-        </a>
-
-        <a href="#" class="menu-btn">
-            <i class="fa-solid fa-scroll"></i>
-            <span class="menu-text">History</span>
-        </a>
-
-        <a href="#" class="menu-btn">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <span class="menu-text">Search</span>
-        </a>
-
-        <a href="#" class="menu-btn">
-            <i class="fa-solid fa-images"></i>
-            <span class="menu-text">Gallery</span>
-        </a>
-
-        <a href="#" class="menu-btn">
-            <i class="fa-solid fa-users"></i>
-            <span class="menu-text">Members</span>
-        </a>
-
-        <a href="#" class="menu-btn">
-            <i class="fa-solid fa-map-location-dot"></i>
-            <span class="menu-text">Map</span>
-        </a>
-
-        <a href="#" class="menu-btn">
-            <i class="fa-solid fa-calendar-days"></i>
-            <span class="menu-text">Events</span>
-        </a>
-
-        <a href="#" class="menu-btn">
-            <i class="fa-solid fa-phone"></i>
-            <span class="menu-text">Contact</span>
-        </a>
-
-        <a href="admin.html" class="menu-btn" style="border-color: #e74c3c;">
-            <i class="fa-solid fa-lock" style="color: #e74c3c;"></i>
-            <span class="menu-text" style="color: #e74c3c;">Admin</span>
-        </a>
+    <div class="navbar">
+        <a href="index.html" class="nav-btn active"><i class="fa-solid fa-house"></i> Home</a>
+        <a href="#" class="nav-btn"><i class="fa-solid fa-sitemap"></i> Shajra</a>
+        <a href="#" class="nav-btn"><i class="fa-solid fa-images"></i> Gallery</a>
+        <a href="#" class="nav-btn"><i class="fa-solid fa-magnifying-glass"></i> Search</a>
+        <div class="dropdown">
+            <button onclick="toggleMenu()" class="nav-btn"><i class="fa-solid fa-bars"></i> More</button>
+            <div id="myDropdown" class="dropdown-content">
+                <a href="#"><i class="fa-solid fa-scroll"></i> History</a>
+                <a href="#"><i class="fa-solid fa-users"></i> Members</a>
+                <a href="#"><i class="fa-solid fa-phone"></i> Contact</a>
+            </div>
+        </div>
     </div>
 
-    <div class="container">
-        <h3>Naya Member Add Karein</h3>
+    <div class="tree-node-container">
+        <h3>Naya Member Jodain</h3>
+        
         <input type="text" id="nameInput" placeholder="Naam likhein...">
-        <input type="file" id="imageInput" accept="image/*">
-        <button onclick="uploadData()" id="btn" class="upload-btn">Upload & Save</button>
+        <label for="imageInput" style="display: block; margin: 10px 0; cursor: pointer; background: #f0f2f5; padding: 10px; border-radius: 12px; color: #555;">
+            <i class="fa-solid fa-camera"></i> Tasveer Chunein
+            <input type="file" id="imageInput" accept="image/*" style="display: none;">
+        </label>
+
+        <button onclick="uploadData()" id="btn" class="add-btn-circle">
+            <i class="fa-solid fa-plus"></i>
+        </button>
+        
         <p id="status"></p>
-        <hr>
-        <div id="displayArea">
-            <h2 id="savedName">Loading...</h2>
-            <img id="savedImage" src="" alt="Saved Image">
+        
+        <div class="saved-node" id="displayArea" style="display: none;"> <img id="savedImage" src="" alt="Saved Image">
+            <h2 id="savedName"></h2>
         </div>
     </div>
 
     <script>
+        // --- SUPABASE CONFIG ---
         const supabaseUrl = 'https://ojphjodmpyblyfyinacb.supabase.co';
         const k1 = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qcGhqb2RtcHlibHlmeWluYWN";
         const k2 = "iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ0MTUwNTAsImV4cCI6MjA3OTk5MTA1MH0";
         const k3 = ".mwKu_g5_OT_89KcAeeSsY8IMlnakV2nQVtKRhWWTcDw";
         const supabaseKey = k1 + k2 + k3;
-
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } });
 
-        async function loadSiteName() {
-            const { data } = await _supabase.from('site_config').select('site_name').limit(1);
-            if (data && data.length > 0) {
-                document.getElementById('mainTitle').innerText = data[0].site_name;
-            } else {
-                document.getElementById('mainTitle').innerText = "Family Shajra";
-            }
-        }
+        // --- JS Functions ---
+        function toggleMenu() { document.getElementById("myDropdown").classList.toggle("show"); }
+        window.onclick = function(e) { if (!e.target.matches('.nav-btn') && !e.target.matches('.fa-bars')) { var d = document.getElementsByClassName("dropdown-content"); for (var i=0; i<d.length; i++) { if (d[i].classList.contains('show')) d[i].classList.remove('show'); } } }
+
+        async function loadSiteName() { const { data } = await _supabase.from('site_config').select('site_name').limit(1); document.getElementById('mainTitle').innerText = (data && data[0]) ? data[0].site_name : "Family Shajra"; }
 
         window.uploadData = async function() {
             const name = document.getElementById('nameInput').value;
@@ -182,35 +149,27 @@
             if (!name || !file) { alert("Naam aur Image zaroori hai!"); return; }
 
             btn.disabled = true;
-            status.innerText = "Uploading...";
+            status.innerText = "Uploading..."; btn.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i>";
 
             try {
                 const fileName = Date.now() + "_" + file.name.replace(/\s/g, '');
-                const { error: imgError } = await _supabase.storage.from('family-images').upload(fileName, file);
-                if (imgError) throw imgError;
+                const { error: imgErr } = await _supabase.storage.from('family-images').upload(fileName, file); if (imgErr) throw imgErr;
                 const { data: urlData } = _supabase.storage.from('family-images').getPublicUrl(fileName);
-                
                 status.innerText = "Saving...";
-                const { error: dbError } = await _supabase.from('family_data').insert([{ full_name: name, image_url: urlData.publicUrl }]);
-                if (dbError) throw dbError;
-
-                alert("Saved!");
-                location.reload();
-            } catch (err) { alert(err.message); } finally { btn.disabled = false; }
+                const { error: dbErr } = await _supabase.from('family_data').insert([{ full_name: name, image_url: urlData.publicUrl }]); if (dbErr) throw dbErr;
+                alert("Saved!"); location.reload();
+            } catch (err) { alert(err.message); status.innerText = ""; } finally { btn.disabled = false; btn.innerHTML = "<i class='fa-solid fa-plus'></i>"; }
         }
 
         async function loadLastEntry() {
             const { data } = await _supabase.from('family_data').select('*').order('id', { ascending: false }).limit(1);
             if (data && data[0]) {
+                document.getElementById('displayArea').style.display = 'block';
                 document.getElementById('savedName').innerText = data[0].full_name;
-                const img = document.getElementById('savedImage');
-                img.src = data[0].image_url;
-                img.style.display = 'block';
+                document.getElementById('savedImage').src = data[0].image_url;
             }
         }
-        
-        loadSiteName();
-        loadLastEntry();
+        loadSiteName(); loadLastEntry();
     </script>
 </body>
 </html>

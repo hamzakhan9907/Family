@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Family Site - Supabase</title>
+    <title>My Family Site</title>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         body { font-family: sans-serif; text-align: center; padding: 20px; background: #f0f8ff; }
@@ -11,14 +11,15 @@
         input { width: 90%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; }
         button { background: #3ecf8e; color: white; border: none; padding: 12px 25px; cursor: pointer; border-radius: 5px; font-weight: bold; }
         button:hover { background: #34b27b; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
         img { max-width: 100%; margin-top: 15px; border-radius: 8px; display: none; border: 2px solid #ddd; }
-        #status { margin-top: 10px; color: #555; font-size: 14px; }
+        #status { margin-top: 10px; color: #555; font-size: 14px; font-weight: bold; }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h3>Family Tree Upload (Supabase)</h3>
+        <h3>Family Tree Upload</h3>
         
         <input type="text" id="nameInput" placeholder="Naam likhein...">
         <input type="file" id="imageInput" accept="image/*">
@@ -35,17 +36,26 @@
     </div>
 
     <script>
-        // --- SETTINGS (Yahan apna URL aur KEY paste karein) ---
-        const supabaseUrl = 'https://ojphjodmpyblyfyinacb.supabase.co
-';
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qcGhqb2Rparameter is either empty or invalid.24iLCJpYXQiOjE3NjQ0MTUwNTAsImV4cCI6MjA3OTk5MTA1MH0.mwKu_g5_OT_89KcAeeSsY8IMlnakV2nQVtKRhWWTcDw
-';
+        // ---------------------------------------------------------
+        // AAPKA URL AUR KEY YAHAN LAGA DIYA HAI
+        // ---------------------------------------------------------
         
+        const supabaseUrl = 'https://ojphjodmpyblyfyinacb.supabase.co';
+        
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qcGhqb2RtcHlibHlmeWluYWNiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ0MTUwNTAsImV4cCI6MjA3OTk5MTA1MH0.mwKu_g5_OT_89KcAeeSsY8IMlnakV2nQVtKRhWWTcDw';
+
+        // ---------------------------------------------------------
+
+        // Check karte hain ki library load hui ya nahi
+        if (typeof supabase === 'undefined') {
+            alert("Error: Internet issue ya Script load nahi hua. Page refresh karein.");
+        }
+
         // Supabase Start
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
         // Upload Function
-        async function uploadData() {
+        window.uploadData = async function() {
             const name = document.getElementById('nameInput').value;
             const fileInput = document.getElementById('imageInput');
             const file = fileInput.files[0];
@@ -61,10 +71,10 @@
             status.innerText = "Photo upload ho rahi hai...";
 
             try {
-                // 1. Image ka unique naam banao
-                const fileName = Date.now() + "_" + file.name;
+                // 1. Image ka unique naam
+                const fileName = Date.now() + "_" + file.name.replace(/\s/g, '');
 
-                // 2. Image Upload karo ('family-images' bucket mein)
+                // NOTE: Bucket ka naam 'family-images' hona chahiye
                 const { data: imgData, error: imgError } = await _supabase
                     .storage
                     .from('family-images')
@@ -72,7 +82,7 @@
 
                 if (imgError) throw imgError;
 
-                // 3. Image ka Public URL lo
+                // 2. Public Link nikalo
                 const { data: urlData } = _supabase
                     .storage
                     .from('family-images')
@@ -82,7 +92,7 @@
 
                 status.innerText = "Database mein save ho raha hai...";
 
-                // 4. Naam aur Image URL Table mein save karo ('family_data' table)
+                // 3. Table mein save karo (Table ka naam 'family_data' hona chahiye)
                 const { error: dbError } = await _supabase
                     .from('family_data')
                     .insert([
@@ -92,39 +102,45 @@
                 if (dbError) throw dbError;
 
                 status.innerText = "Success! Data save ho gaya.";
-                alert("Upload Successful!");
+                alert("Mubarak ho! Data Permanent Save ho gaya.");
                 
-                // Naya data show karo
-                loadLastEntry();
+                // Form clear aur data reload
+                document.getElementById('nameInput').value = "";
+                fileInput.value = "";
+                loadLastEntry(); 
 
             } catch (err) {
                 console.error(err);
-                status.innerText = "Error: " + err.message;
+                status.innerText = "Error aaya: " + err.message;
+                alert("Error: " + err.message);
             } finally {
                 btn.disabled = false;
             }
         }
 
-        // Data Read Function (Aakhri entry dikhane ke liye)
+        // Data Read Function
         async function loadLastEntry() {
-            // Sabse aakhri entry uthao
-            const { data, error } = await _supabase
-                .from('family_data')
-                .select('*')
-                .order('id', { ascending: false }) // Sabse naya upar
-                .limit(1);
+            try {
+                const { data, error } = await _supabase
+                    .from('family_data')
+                    .select('*')
+                    .order('id', { ascending: false })
+                    .limit(1);
 
-            if (data && data.length > 0) {
-                document.getElementById('savedName').innerText = data[0].full_name;
-                const img = document.getElementById('savedImage');
-                img.src = data[0].image_url;
-                img.style.display = 'block';
-            } else {
-                document.getElementById('savedName').innerText = "Koi data nahi mila.";
+                if (data && data.length > 0) {
+                    document.getElementById('savedName').innerText = data[0].full_name;
+                    const img = document.getElementById('savedImage');
+                    img.src = data[0].image_url;
+                    img.style.display = 'block';
+                } else {
+                    document.getElementById('savedName').innerText = "Koi data nahi mila.";
+                }
+            } catch (err) {
+                console.log("Loading error:", err.message);
             }
         }
 
-        // Page load hone par data laye
+        // Load data on start
         loadLastEntry();
 
     </script>

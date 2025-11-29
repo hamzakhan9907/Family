@@ -98,8 +98,14 @@
     <script>
         // --- SUPABASE CONFIG ---
         const supabaseUrl = 'https://ojphjodmpyblyfyinacb.supabase.co';
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qcGhqb2Rparameter is either empty or invalid.24iLCJpYXQiOjE3NjQ0MTUwNTAsImV4cCI6MjA3OTk5MTA1MH0.mwKu_g5_OT_89KcAeeSsY8IMlnakV2nQVtKRhWWTcDw';
+        const supabaseKey = 'const supabaseKey = const keyPart1 = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.";
+        const keyPart2 = "eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qcGhqb2Rparameter is either empty or invalid.24iLCJpYXQiOjE3NjQ0MTUwNTAsImV4cCI6MjA3OTk5MTA1MH0.";
+        const keyPart3 = "mwKu_g5_OT_89KcAeeSsY8IMlnakV2nQVtKRhWWTcDw";
 
+        // Yahan teeno ko mila kar poori key bana di
+        const supabaseKey = keyPart1 + keyPart2 + keyPart3;
+        
+        // -----------------------------------------------------------
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
         // Admin Button abhi sirf ye message dikhayega

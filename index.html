@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Upload Site</title>
+    <title>Permanent Save Site</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -11,79 +11,132 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
+            padding: 20px;
         }
         .container {
             background-color: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
             text-align: center;
-            width: 300px;
+            width: 100%;
+            max-width: 350px;
         }
+        h3 { color: #333; margin-bottom: 20px; }
+        
         input {
             width: 90%;
-            padding: 10px;
+            padding: 12px;
             margin: 10px 0;
-            border: 1px solid #ddd;
-            border-radius: 5px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
         }
-        /* Result dekhne ke liye style */
+        
+        /* Save Button Design */
+        button.delete-btn {
+            background-color: #ff4b4b;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
         .result {
-            margin-top: 20px;
-            border-top: 2px solid #ddd;
-            padding-top: 10px;
+            margin-top: 25px;
+            border-top: 2px dashed #bbb;
+            padding-top: 15px;
         }
         #showName {
-            color: #333;
-            font-size: 20px;
+            color: #2c3e50;
+            font-size: 22px;
             font-weight: bold;
+            text-transform: capitalize;
+            margin-bottom: 10px;
         }
         #showImage {
             max-width: 100%;
-            margin-top: 10px;
-            border-radius: 5px;
-            display: none; /* Pehle chhupa rahega */
+            max-height: 300px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            display: none;
         }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h3>Profile Upload Karein</h3>
+        <h3>Permanent Profile Card</h3>
         
-        <input type="text" id="nameInput" placeholder="Apna Naam likhein..." oninput="updateName()">
+        <input type="text" id="nameInput" placeholder="Naam likhein aur save ho jayega..." oninput="saveData()">
         
-        <input type="file" id="imageInput" accept="image/*" onchange="previewImage()">
+        <input type="file" id="imageInput" accept="image/*" onchange="saveImage()">
 
         <div class="result">
             <h2 id="showName"></h2>
-            <img id="showImage" src="" alt="Image Preview">
+            <img id="showImage" src="" alt="Profile Photo">
+            <br>
+            <button onclick="clearData()" class="delete-btn">Delete Data</button>
         </div>
     </div>
 
     <script>
-        // Naam update karne ka function
-        function updateName() {
+        // 1. Page load hote hi purana data check karo
+        window.onload = function() {
+            var savedName = localStorage.getItem("myName");
+            var savedImage = localStorage.getItem("myImage");
+
+            if (savedName) {
+                document.getElementById("nameInput").value = savedName;
+                document.getElementById("showName").innerText = savedName;
+            }
+
+            if (savedImage) {
+                var img = document.getElementById("showImage");
+                img.src = savedImage;
+                img.style.display = "block";
+            }
+        };
+
+        // 2. Naam save karne ka function
+        function saveData() {
             var name = document.getElementById("nameInput").value;
             document.getElementById("showName").innerText = name;
+            // LocalStorage mein save karo
+            localStorage.setItem("myName", name);
         }
 
-        // Image dikhane ka function
-        function previewImage() {
+        // 3. Image save karne ka function
+        function saveImage() {
             var file = document.getElementById("imageInput").files[0];
             var reader = new FileReader();
 
             reader.onloadend = function() {
                 var img = document.getElementById("showImage");
-                img.src = reader.result;
-                img.style.display = "block"; // Image show ho jaye
+                var base64String = reader.result;
+                
+                img.src = base64String;
+                img.style.display = "block";
+                
+                // Image ko text bana kar save karo
+                localStorage.setItem("myImage", base64String);
             }
 
             if (file) {
                 reader.readAsDataURL(file);
             }
+        }
+
+        // 4. Data delete karne ka function
+        function clearData() {
+            localStorage.removeItem("myName");
+            localStorage.removeItem("myImage");
+            location.reload(); // Page refresh karo
         }
     </script>
 

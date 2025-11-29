@@ -3,28 +3,88 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Family Site</title>
+    <title>Family Site with Admin</title>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 20px; background: #f0f8ff; }
-        .container { background: white; max-width: 400px; margin: auto; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        body { 
+            font-family: sans-serif; 
+            margin: 0; /* Margin hataya taake header full width ho */
+            padding: 0;
+            background: #f0f8ff; 
+            text-align: center;
+        }
+
+        /* --- HEADER DESIGN START --- */
+        header {
+            background-color: #2c3e50; /* Dark Blue color */
+            color: white;
+            padding: 15px 20px;
+            display: flex; /* Cheezon ko aamne saamne lane ke liye */
+            justify-content: space-between; /* Ek left, Ek right */
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .site-title {
+            font-size: 22px;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .admin-btn {
+            background-color: #e74c3c; /* Red color */
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: none;
+        }
+        .admin-btn:hover { background-color: #c0392b; }
+        /* --- HEADER DESIGN END --- */
+
+        .container { 
+            background: white; 
+            max-width: 400px; 
+            margin: 30px auto; /* Thoda neeche kiya */
+            padding: 20px; 
+            border-radius: 10px; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
+        }
         input { width: 90%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; }
-        button { background: #3ecf8e; color: white; border: none; padding: 12px 25px; cursor: pointer; border-radius: 5px; font-weight: bold; }
-        button:hover { background: #34b27b; }
-        button:disabled { background: #ccc; cursor: not-allowed; }
+        
+        /* Upload Button Green wala */
+        .upload-btn { 
+            background: #3ecf8e; 
+            color: white; 
+            border: none; 
+            padding: 12px 25px; 
+            cursor: pointer; 
+            border-radius: 5px; 
+            font-weight: bold; 
+            margin-top: 10px;
+        }
+        .upload-btn:hover { background: #34b27b; }
+        .upload-btn:disabled { background: #ccc; cursor: not-allowed; }
+
         img { max-width: 100%; margin-top: 15px; border-radius: 8px; display: none; border: 2px solid #ddd; }
         #status { margin-top: 10px; color: #555; font-size: 14px; font-weight: bold; }
     </style>
 </head>
 <body>
 
+    <header>
+        <div class="site-title">Family Shajra</div> <button class="admin-btn" onclick="adminAlert()">Admin Login</button>
+    </header>
+
     <div class="container">
-        <h3>Family Tree Upload</h3>
+        <h3>Naya Member Add Karein</h3>
         
         <input type="text" id="nameInput" placeholder="Naam likhein...">
         <input type="file" id="imageInput" accept="image/*">
         
-        <button onclick="uploadData()" id="btn">Upload & Save</button>
+        <button onclick="uploadData()" id="btn" class="upload-btn">Upload & Save</button>
         <p id="status"></p>
 
         <hr>
@@ -36,23 +96,16 @@
     </div>
 
     <script>
-        // ---------------------------------------------------------
-        // AAPKA URL AUR KEY YAHAN LAGA DIYA HAI
-        // ---------------------------------------------------------
-        
+        // --- SUPABASE CONFIG ---
         const supabaseUrl = 'https://ojphjodmpyblyfyinacb.supabase.co';
-        
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qcGhqb2RtcHlibHlmeWluYWNiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ0MTUwNTAsImV4cCI6MjA3OTk5MTA1MH0.mwKu_g5_OT_89KcAeeSsY8IMlnakV2nQVtKRhWWTcDw';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qcGhqb2Rparameter is either empty or invalid.24iLCJpYXQiOjE3NjQ0MTUwNTAsImV4cCI6MjA3OTk5MTA1MH0.mwKu_g5_OT_89KcAeeSsY8IMlnakV2nQVtKRhWWTcDw';
 
-        // ---------------------------------------------------------
-
-        // Check karte hain ki library load hui ya nahi
-        if (typeof supabase === 'undefined') {
-            alert("Error: Internet issue ya Script load nahi hua. Page refresh karein.");
-        }
-
-        // Supabase Start
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        // Admin Button abhi sirf ye message dikhayega
+        function adminAlert() {
+            alert("Admin Login Page abhi banna baaki hai!");
+        }
 
         // Upload Function
         window.uploadData = async function() {
@@ -71,10 +124,8 @@
             status.innerText = "Photo upload ho rahi hai...";
 
             try {
-                // 1. Image ka unique naam
                 const fileName = Date.now() + "_" + file.name.replace(/\s/g, '');
 
-                // NOTE: Bucket ka naam 'family-images' hona chahiye
                 const { data: imgData, error: imgError } = await _supabase
                     .storage
                     .from('family-images')
@@ -82,7 +133,6 @@
 
                 if (imgError) throw imgError;
 
-                // 2. Public Link nikalo
                 const { data: urlData } = _supabase
                     .storage
                     .from('family-images')
@@ -90,59 +140,46 @@
                 
                 const finalImageUrl = urlData.publicUrl;
 
-                status.innerText = "Database mein save ho raha hai...";
+                status.innerText = "Saving to database...";
 
-                // 3. Table mein save karo (Table ka naam 'family_data' hona chahiye)
                 const { error: dbError } = await _supabase
                     .from('family_data')
-                    .insert([
-                        { full_name: name, image_url: finalImageUrl }
-                    ]);
+                    .insert([{ full_name: name, image_url: finalImageUrl }]);
 
                 if (dbError) throw dbError;
 
                 status.innerText = "Success! Data save ho gaya.";
-                alert("Mubarak ho! Data Permanent Save ho gaya.");
+                alert("Saved Successfully!");
                 
-                // Form clear aur data reload
                 document.getElementById('nameInput').value = "";
                 fileInput.value = "";
                 loadLastEntry(); 
 
             } catch (err) {
                 console.error(err);
-                status.innerText = "Error aaya: " + err.message;
-                alert("Error: " + err.message);
+                status.innerText = "Error: " + err.message;
             } finally {
                 btn.disabled = false;
             }
         }
 
-        // Data Read Function
+        // Read Data Function
         async function loadLastEntry() {
-            try {
-                const { data, error } = await _supabase
-                    .from('family_data')
-                    .select('*')
-                    .order('id', { ascending: false })
-                    .limit(1);
+            const { data, error } = await _supabase
+                .from('family_data')
+                .select('*')
+                .order('id', { ascending: false })
+                .limit(1);
 
-                if (data && data.length > 0) {
-                    document.getElementById('savedName').innerText = data[0].full_name;
-                    const img = document.getElementById('savedImage');
-                    img.src = data[0].image_url;
-                    img.style.display = 'block';
-                } else {
-                    document.getElementById('savedName').innerText = "Koi data nahi mila.";
-                }
-            } catch (err) {
-                console.log("Loading error:", err.message);
+            if (data && data.length > 0) {
+                document.getElementById('savedName').innerText = data[0].full_name;
+                const img = document.getElementById('savedImage');
+                img.src = data[0].image_url;
+                img.style.display = 'block';
             }
         }
 
-        // Load data on start
         loadLastEntry();
-
     </script>
 
 </body>

@@ -6,55 +6,35 @@
     <title>Family Shajra</title>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700;800&display=swap" rel="stylesheet">
     
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background: #f8f9fa; text-align: center; }
         
         /* HEADER */
         header {
-            background-color: #2c3e50; color: white; padding: 10px 15px;
+            background-color: #2c3e50; 
+            padding: 10px 15px;
             display: flex; justify-content: space-between; align-items: center;
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
-        .site-title { font-size: 20px; font-weight: bold; color: #ffd700; text-shadow: 1px 1px 2px #000; }
+
+        .site-title { 
+            font-family: 'Poppins', sans-serif; 
+            font-size: 20px; font-weight: 800; margin: 0;
+            background: linear-gradient(to right, #4ade80, #3b82f6); 
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; color: transparent;
+            filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.3));
+        }
+
         .admin-btn { background-color: #e74c3c; color: white; border: none; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-weight: bold; text-decoration: none; font-size: 11px; }
 
-        /* --- UPDATED NAVBAR (Side-by-Side) --- */
-        .navbar { 
-            background: #34495e; 
-            padding: 8px 5px; /* Padding adjust ki */
-            display: flex; 
-            justify-content: space-around; /* Barabar phailay hue */
-            align-items: center; 
-        }
-        
-        .nav-btn { 
-            background: none; 
-            border: none; 
-            color: #bdc3c7; 
-            display: flex; 
-            flex-direction: row; /* YAHAN CHANGE KIYA: Row (Line) mein kar diya */
-            align-items: center; /* Center align */
-            text-decoration: none; 
-            font-size: 12px; /* Font size */
-            cursor: pointer; 
-            transition: 0.3s;
-            padding: 5px 8px;
-            border-radius: 15px; /* Thoda gol background hover par */
-        }
-        
-        .nav-btn i { 
-            font-size: 16px; 
-            margin-right: 6px; /* Icon ke aage faasla diya text ke liye */
-            color: #bdc3c7; 
-            margin-bottom: 0; /* Neeche ka margin hataya */
-        }
-        
+        /* NAVBAR */
+        .navbar { background: #34495e; display: flex; justify-content: space-around; align-items: center; }
+        .nav-btn { background: none; border: none; color: #bdc3c7; display: flex; flex-direction: row; align-items: center; text-decoration: none; font-size: 12px; cursor: pointer; transition: 0.3s; padding: 5px 8px; border-radius: 15px; }
+        .nav-btn i { font-size: 16px; margin-right: 6px; color: #bdc3c7; margin-bottom: 0; }
         .nav-btn.active i, .nav-btn:hover i { color: #ffd700; }
-        .nav-btn.active, .nav-btn:hover { 
-            color: white; 
-            background: rgba(255,255,255,0.1); /* Hover par halka background */
-        }
+        .nav-btn.active, .nav-btn:hover { color: white; background: rgba(255,255,255,0.1); }
 
         /* DROPDOWN */
         .dropdown { position: relative; display: inline-block; }
@@ -62,51 +42,63 @@
         .dropdown-content a { color: #333; padding: 10px 14px; text-decoration: none; display: block; border-bottom: 1px solid #f1f1f1; font-size: 13px; text-align: left; }
         .show { display: block; }
 
-        /* COMPACT TREE NODE CONTAINER */
+        /* --- ZERO PADDING CONTAINER --- */
         .tree-node-container {
             background: white;
             width: 80%;
-            max-width: 300px;
-            margin: 30px auto;
-            padding: 15px;
+            max-width: 260px; /* Width bhi thodi kam ki taake smart lage */
+            margin: 40px auto; /* Upar se faasla */
+            
+            /* PADDING BILKUL ZERO */
+            padding: 0 !important;
+            
+            /* Height content ke hisaab se hogi, lekin extra space nahi hogi */
+            padding-bottom: 25px; /* Sirf button ke liye neeche jagah */
+            
             border-radius: 15px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.08);
             position: relative; 
             border: 1px solid #f0f0f0;
         }
-        h3 { margin-top: 0; margin-bottom: 10px; color: #2c3e50; font-size: 16px; }
-        input { width: 100%; padding: 8px; margin: 5px 0; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; box-sizing: border-box; outline: none; }
+        
+        h3 { margin-top: 15px; margin-bottom: 8px; color: #2c3e50; font-size: 16px; }
+
+        /* Elements ko center karne ke liye margin auto use kiya */
+        input { 
+            width: 90%; 
+            display: block; 
+            margin: 5px auto; /* Center align */
+            padding: 8px; 
+            border: 1px solid #ddd; border-radius: 8px; font-size: 13px; box-sizing: border-box; outline: none; 
+        }
         input:focus { border-color: #3ecf8e; }
 
         .file-label {
-            display: block; margin: 5px 0; cursor: pointer; 
+            width: 90%;
+            display: block; 
+            margin: 5px auto; /* Center align */
+            cursor: pointer; 
             background: #f8f9fa; padding: 8px; border-radius: 8px; 
             color: #666; font-size: 12px; border: 1px dashed #ccc;
+            box-sizing: border-box;
         }
 
-        /* SMALL BUTTON */
         .add-btn-circle {
-            background: #3ecf8e;
-            color: white;
-            border: none;
-            width: 40px;
-            height: 40px; 
-            border-radius: 50%;
-            font-size: 18px; 
-            cursor: pointer;
+            background: #3ecf8e; color: white; border: none;
+            width: 40px; height: 40px; border-radius: 50%;
+            font-size: 18px; cursor: pointer;
             box-shadow: 0 3px 8px rgba(62, 207, 142, 0.4);
             display: flex; justify-content: center; align-items: center;
             position: absolute;
-            bottom: -20px;
-            left: 50%;
-            transform: translateX(-50%);
+            bottom: -20px; left: 50%; transform: translateX(-50%);
             transition: all 0.3s ease;
         }
         .add-btn-circle:hover { background: #34b27b; transform: translateX(-50%) scale(1.1); }
         .add-btn-circle:disabled { background: #ccc; }
 
-        #status { margin-top: 20px; color: #555; font-size: 11px; font-weight: bold; margin-bottom: 0; }
-        .saved-node { margin-top: 25px; padding-top: 10px; border-top: 1px dashed #eee; }
+        #status { margin-top: 10px; color: #555; font-size: 11px; font-weight: bold; margin-bottom: 0; }
+        
+        .saved-node { margin-top: 15px; padding-top: 10px; border-top: 1px dashed #eee; width: 90%; margin-left: auto; margin-right: auto; }
         #savedImage { width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 2px solid #3ecf8e; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 3px; }
         #savedName { color: #2c3e50; font-weight: bold; font-size: 14px; margin: 0; }
 
@@ -123,9 +115,7 @@
         <a href="index.html" class="nav-btn active"><i class="fa-solid fa-house"></i> Home</a>
         <a href="#" class="nav-btn"><i class="fa-solid fa-sitemap"></i> Shajra</a>
         <a href="#" class="nav-btn"><i class="fa-solid fa-images"></i> Gallery</a>
-        
         <a href="#" class="nav-btn"><i class="fa-solid fa-magnifying-glass"></i> Search</a>
-
         <div class="dropdown">
             <button onclick="toggleMenu()" class="nav-btn"><i class="fa-solid fa-bars"></i> More</button>
             <div id="myDropdown" class="dropdown-content">
@@ -143,14 +133,19 @@
             <i class="fa-solid fa-camera"></i> Tasveer Chunein
             <input type="file" id="imageInput" accept="image/*" style="display: none;">
         </label>
+        
+        <div id="savedNodeArea">
+             <p id="status"></p>
+            
+            <div class="saved-node" id="displayArea" style="display: none;">
+                <img id="savedImage" src="" alt="Saved Image">
+                <h2 id="savedName"></h2>
+            </div>
+        </div>
+
         <button onclick="uploadData()" id="btn" class="add-btn-circle">
             <i class="fa-solid fa-plus"></i>
         </button>
-        <p id="status"></p>
-        <div class="saved-node" id="displayArea" style="display: none;">
-            <img id="savedImage" src="" alt="Saved Image">
-            <h2 id="savedName"></h2>
-        </div>
     </div>
 
     <script>

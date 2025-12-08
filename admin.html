@@ -1,81 +1,730 @@
 <!DOCTYPE html>
-<html lang="ur">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel</title>
+    <title>Admin Panel - Shajra</title>
+    
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <style>
-        body { font-family: sans-serif; background: #2c3e50; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .admin-box { background: white; padding: 30px; border-radius: 10px; width: 300px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-        h2 { color: #333; }
-        input { width: 90%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
-        button { width: 100%; padding: 12px; background: #e74c3c; color: white; border: none; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer; }
-        button:hover { background: #c0392b; }
-        .back-link { display: block; margin-top: 15px; color: #555; text-decoration: none; font-size: 14px; }
-        .hidden { display: none; }
-    </style>
-</head>
-<body>
-
-    <div class="admin-box">
-        <h2>Admin Settings</h2>
-        
-        <label style="font-weight:bold; display:block; text-align:left;">Website Name Change:</label>
-        <input type="text" id="newName" placeholder="Naya naam likhein...">
-        <button onclick="updateName()">Update Name</button>
-        
-        <br><br>
-        <a href="index.html" class="back-link">← Wapis Website Par Jayein</a>
-    </div>
-
     <script>
+        // IMPORTANT: Supabase connection details 
         const supabaseUrl = 'https://ojphjodmpyblyfyinacb.supabase.co';
         const k1 = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qcGhqb2RtcHlibHlmeWluYWN";
         const k2 = "iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ0MTUwNTAsImV4cCI6MjA3OTk5MTA1MH0";
         const k3 = ".mwKu_g5_OT_89KcAeeSsY8IMlnakV2nQVtKRhWWTcDw";
-        const supabaseKey = k1 + k2 + k3;
-
-        const _supabase = supabase.createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } });
-
-        // --- SECURITY CHECK (Simple Password) ---
-        // Jab page khulega, Password mangega
-        const password = prompt("Admin Password likhein:");
-        if (password !== "12345") { // Yahan password change kar sakte hain
-            alert("Ghalat Password!");
-            window.location.href = "index.html"; // Wapis bhej do
-        } else {
-            // Agar password sahi hai, to purana naam load karo
-            loadCurrentName();
+        const SUPABASE_ANON_KEY = k1 + k2 + k3; 
+        const _supabase = supabase.createClient(supabaseUrl, SUPABASE_ANON_KEY);
+        
+        // --- ADMIN PASSCODE DEFINITION ---
+        let ADMIN_PASSCODE = "familyadmin123";
+        const storedPasscode = localStorage.getItem('shajra_admin_passcode');
+        if (storedPasscode) {
+            ADMIN_PASSCODE = storedPasscode;
         }
-
-        // Naam Load karna
-        async function loadCurrentName() {
-            const { data } = await _supabase.from('site_config').select('site_name').limit(1);
-            if (data && data[0]) {
-                document.getElementById('newName').value = data[0].site_name;
-            }
-        }
-
-        // Naam Update karna
-        async function updateName() {
-            const newName = document.getElementById('newName').value;
-            if (!newName) return alert("Naam khali nahi ho sakta!");
-
-            // Hum maan ke chal rahe hain ke ID = 1 hai (kyunki pehli row hai)
-            // 'site_config' table mein update kar rahe hain
-            const { error } = await _supabase
-                .from('site_config')
-                .update({ site_name: newName })
-                .eq('id', 1); // Sirf ID 1 ko update karo (Pehli row)
-
-            if (error) {
-                alert("Error: " + error.message);
-            } else {
-                alert("Naam change ho gaya!");
-                window.location.href = "index.html"; // Home page par wapis jao
-            }
-        }
+        // ---------------------------------
+        
+        let allMembers = []; // Global store for member data
+        let contactRequests = [];
     </script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        body { font-family: 'Poppins', sans-serif; background-color: #f4f7f9; color: #333; margin: 0; padding: 0; }
+        .container { max-width: 1100px; margin: 20px auto; padding: 20px; background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); }
+        .tab-button { padding: 10px 15px; background: #e0e7ff; color: #4338ca; border: none; cursor: pointer; border-radius: 8px 8px 0 0; transition: background 0.3s; font-weight: 600; }
+        .tab-button.active { background: #4338ca; color: white; }
+        .tab-content { padding: 20px 0; border-top: 2px solid #4338ca; }
+        .form-group { margin-bottom: 15px; text-align: left; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px; }
+        input[type="text"], input[type="date"], select, textarea, input[type="password"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+        .btn-primary { background: #10b981; color: white; padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; transition: background 0.3s; font-weight: 600; }
+        .btn-primary:hover { background: #059669; }
+        
+        /* Member Table and Root Table */
+        .member-table-container { overflow-x: auto; margin-top: 20px; }
+        .member-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 12px; }
+        .member-table th, .member-table td { padding: 8px 10px; border-bottom: 1px solid #eee; }
+        .member-table th { background-color: #f8f9fa; color: #495057; font-weight: 700; text-transform: uppercase; }
+        .member-table tr:hover { background-color: #f0f4f7; }
+        
+        /* Specific Styles for Management Tabs */
+        .root-form-container { display: flex; gap: 20px; }
+        .root-form-container > div { flex: 1; }
+        .member-form-container { display: flex; gap: 20px; }
+        .member-form-container > div:first-child { flex: 1; }
+        .member-form-container > div:last-child { flex: 2; }
+        
+        /* Tool Section Grid */
+        .tool-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .tool-box { background: #f0f4ff; padding: 20px; border-radius: 8px; border: 1px solid #c3d4ff; text-align: center; }
+        .tool-box h3 { font-size: 18px; font-weight: 700; color: #3b82f6; margin-bottom: 10px; }
+        
+        /* Settings Grid */
+        .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+        /* Custom Styles for Separate Save Buttons */
+        .settings-grid .form-group.flex { 
+            align-items: flex-start; 
+        }
+        .settings-grid .form-group textarea + button {
+            margin-top: 15px; 
+        }
+    </style>
+</head>
+<body>
+
+<div id="loginModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex justify-center items-center z-50">
+    <div class="bg-white p-8 rounded-lg shadow-xl w-80 text-center">
+        <h2 class="text-2xl font-bold mb-6 text-gray-800"><i class="fa-solid fa-lock"></i> Admin Login</h2>
+        <input type="password" id="passcode" placeholder="Enter Passcode" class="w-full p-3 mb-4 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
+        <button onclick="loginAdmin()" class="w-full bg-blue-600 text-white p-3 rounded-lg font-semibold hover:bg-blue-700 transition duration-200">Login</button>
+        <p class="mt-4 text-sm text-gray-500">Don't forget the secret sauce! 🤫</p>
+    </div>
+</div>
+
+<div id="adminPanel" class="container" style="display:none;">
+    <h1 class="text-3xl font-extrabold mb-6 text-center text-gray-800"><i class="fa-solid fa-screwdriver-wrench"></i> Admin Panel</h1>
+
+    <div class="flex border-b border-gray-300 mb-6">
+        <button class="tab-button active" onclick="openTab('root')"><i class="fa-solid fa-tree"></i> Root Families</button>
+        <button class="tab-button" onclick="openTab('member')"><i class="fa-solid fa-users"></i> Member Data</button>
+        <button class="tab-button" onclick="openTab('tools')"><i class="fa-solid fa-toolbox"></i> Tools</button>
+        <button class="tab-button" onclick="openTab('settings')"><i class="fa-solid fa-gear"></i> Settings</button>
+        <button class="tab-button" onclick="logoutAdmin()" style="margin-left: auto; background: #e74c3c; color: white;"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+    </div>
+
+    <div id="root" class="tab-content">
+        <h2 class="text-xl font-bold mb-4 text-center text-gray-700">👑 Root Family Management (Main Trees)</h2>
+        <div class="root-form-container">
+            <div class="bg-gray-50 p-6 rounded-lg shadow-sm border border-gray-200">
+                <h3 class="text-lg font-semibold mb-4" id="rootFormTitle">Add New Root Member</h3>
+                <input type="hidden" id="rootMemberId">
+                
+                <div class="form-group">
+                    <label for="rootFullName">Full Name:</label>
+                    <input type="text" id="rootFullName" placeholder="e.g., Qasim Ali" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="rootRelation">Relation (Optional, e.g., Head):</label>
+                    <input type="text" id="rootRelation" placeholder="Head, Founder etc.">
+                </div>
+                
+                <div class="form-group">
+                    <label for="rootGender">Gender:</label>
+                    <select id="rootGender" required>
+                        <option value="M">Male</option>
+                        <option value="F">Female</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="rootDOB">Date of Birth (YYYY-MM-DD):</label>
+                    <input type="date" id="rootDOB">
+                </div>
+                
+                <button id="rootSubmitBtn" onclick="addOrUpdateRootMember()" class="btn-primary w-full"><i class="fa-solid fa-plus"></i> Add Root Member</button>
+                <button id="rootCancelBtn" onclick="resetRootForm()" class="mt-2 w-full bg-red-400 text-white p-2 rounded-lg font-semibold hover:bg-red-500 transition duration-200" style="display:none;">Cancel Edit</button>
+            </div>
+            
+            <div>
+                <h3 class="text-lg font-semibold mb-4">Existing Root Members</h3>
+                <div class="member-table-container">
+                    <table class="member-table root-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Relation</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rootMemberList">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="member" class="tab-content" style="display:none;">
+        <h2 class="text-xl font-bold mb-4 text-center text-gray-700">👨‍👩‍👧‍👦 Family Member Data Management</h2>
+        
+        <div class="member-form-container">
+            <div class="bg-gray-50 p-6 rounded-lg shadow-sm border border-gray-200">
+                <h3 class="text-lg font-semibold mb-4" id="memberFormTitle">Add New Member</h3>
+                <input type="hidden" id="memberId">
+
+                <div class="form-group">
+                    <label for="fullName">Full Name:</label>
+                    <input type="text" id="fullName" placeholder="e.g., Ali Raza" required>
+                </div>
+                <div class="form-group">
+                    <label for="parentId">Parent/Father:</label>
+                    <select id="parentId" required>
+                        </select>
+                </div>
+                <div class="form-group">
+                    <label for="relation">Relation:</label>
+                    <input type="text" id="relation" placeholder="e.g., Son, Daughter, Wife" required>
+                </div>
+                
+                <div class="form-group flex gap-3">
+                    <div class="flex-1">
+                        <label for="gender">Gender:</label>
+                        <select id="gender" required>
+                            <option value="M">Male</option>
+                            <option value="F">Female</option>
+                        </select>
+                    </div>
+                    <div class="flex-1">
+                        <label for="isAlive">Status:</label>
+                        <select id="isAlive" required>
+                            <option value="true">Alive</option>
+                            <option value="false">Deceased</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="dob">Date of Birth (YYYY-MM-DD):</label>
+                    <input type="date" id="dob">
+                </div>
+                <div class="form-group">
+                    <label for="imageUrl">Image URL (Optional):</label>
+                    <input type="text" id="imageUrl" placeholder="http://example.com/pic.jpg">
+                </div>
+                
+                <button id="memberSubmitBtn" onclick="addOrUpdateMember()" class="btn-primary w-full"><i class="fa-solid fa-user-plus"></i> Add Member</button>
+                <button id="memberCancelBtn" onclick="resetMemberForm()" class="mt-2 w-full bg-red-400 text-white p-2 rounded-lg font-semibold hover:bg-red-500 transition duration-200" style="display:none;">Cancel Edit</button>
+            </div>
+            
+            <div class="bg-white p-4 rounded-lg">
+                <h3 class="text-lg font-semibold mb-4">All Family Members</h3>
+                <div class="member-table-container">
+                    <table class="member-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Parent</th>
+                                <th>Relation</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="memberList">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="tools" class="tab-content" style="display:none;">
+        <h2 class="text-xl font-bold mb-4 text-center text-gray-700">🛠️ Admin Tools & Utilities</h2>
+        
+        <div class="tool-grid">
+            
+            <div class="tool-box col-span-2">
+                <i class="fa-solid fa-inbox text-3xl mb-3 text-green-500"></i>
+                <h3>Inbox (Contact Requests)</h3>
+                <p class="text-sm mb-3 text-gray-600">View and manage contact requests sent by general users.</p>
+                <div class="member-table-container">
+                    <table class="member-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Contact</th>
+                                <th>Message Snippet</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inboxList">
+                            <tr><td colspan="5" class="text-gray-500 text-center">Click 'Load Inbox' to fetch messages.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <button onclick="loadInbox()" class="btn-primary w-full mt-3">
+                    <i class="fa-solid fa-envelope-open-text"></i> Load Inbox
+                </button>
+            </div>
+
+            <div class="tool-box">
+                <i class="fa-solid fa-download text-3xl mb-3 text-indigo-500"></i>
+                <h3>Data Backup</h3>
+                <p class="text-sm mb-3 text-gray-600">Download the current 'family_data' table as a JSON file.</p>
+                <button onclick="downloadBackup()" class="bg-indigo-500 text-white p-2 rounded-lg font-semibold w-full hover:bg-indigo-600">
+                    <i class="fa-solid fa-file-export"></i> Download JSON Backup
+                </button>
+            </div>
+            
+        </div>
+    </div>
+
+    <div id="settings" class="tab-content" style="display:none;">
+        <h2 class="text-xl font-bold mb-4 text-center text-gray-700">⚙️ Site Configuration & Security</h2>
+        
+        <div class="settings-grid">
+            <div class="bg-gray-50 p-6 rounded-lg shadow-sm border border-gray-200">
+                <h3 class="text-lg font-semibold mb-4">Edit Site Info (Separate Saves)</h3>
+                
+                <div class="form-group flex gap-2">
+                    <div class="flex-1">
+                        <label for="siteName">Site Title:</label>
+                        <input type="text" id="siteName" required>
+                    </div>
+                    <button onclick="updateSingleSetting('siteName', 'site_name')" class="mt-6 h-10 bg-blue-500 text-white p-2 text-sm rounded-lg font-semibold hover:bg-blue-600 w-24">Save</button>
+                </div>
+                
+                <div class="form-group">
+                    <label for="aboutUrdu">About (Urdu Text):</label>
+                    <div class="flex gap-2">
+                        <textarea id="aboutUrdu" rows="3" class="flex-1"></textarea>
+                        <button onclick="updateSingleSetting('aboutUrdu', 'about_urdu')" class="mt-1 h-20 bg-blue-500 text-white p-2 text-sm rounded-lg font-semibold hover:bg-blue-600 w-24">Save</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="contactDesc">Contact Description:</label>
+                    <div class="flex gap-2">
+                        <textarea id="contactDesc" rows="2" class="flex-1"></textarea>
+                        <button onclick="updateSingleSetting('contactDesc', 'contact_desc')" class="mt-1 h-16 bg-blue-500 text-white p-2 text-sm rounded-lg font-semibold hover:bg-blue-600 w-24">Save</button>
+                    </div>
+                </div>
+                
+                <div class="form-group flex gap-2">
+                    <div class="flex-1">
+                        <label for="phone">Contact Number:</label>
+                        <input type="text" id="phone" placeholder="+923001234567 (with country code)">
+                    </div>
+                    <button onclick="updateSingleSetting('phone', 'phone')" class="mt-6 h-10 bg-blue-500 text-white p-2 text-sm rounded-lg font-semibold hover:bg-blue-600 w-24">Save</button>
+                </div>
+                
+                <div class="form-group flex gap-2">
+                    <div class="flex-1">
+                        <label for="whatsapp">WhatsApp Number:</label>
+                        <input type="text" id="whatsapp" placeholder="923001234567 (Country code without +)">
+                    </div>
+                    <button onclick="updateSingleSetting('whatsapp', 'whatsapp')" class="mt-6 h-10 bg-blue-500 text-white p-2 text-sm rounded-lg font-semibold hover:bg-blue-600 w-24">Save</button>
+                </div>
+
+                <div class="form-group flex gap-2">
+                    <div class="flex-1">
+                        <label for="features">App Features (Comma Separated):</label>
+                        <input type="text" id="features" placeholder="Detailed View, Stats, Search, Collapse Nodes">
+                    </div>
+                    <button onclick="updateSingleSetting('features', 'features')" class="mt-6 h-10 bg-blue-500 text-white p-2 text-sm rounded-lg font-semibold hover:bg-blue-600 w-24">Save</button>
+                </div>
+
+            </div>
+            
+            <div class="bg-red-50 p-6 rounded-lg shadow-sm border border-red-200">
+                <h3 class="text-lg font-semibold mb-4 text-red-700"><i class="fa-solid fa-user-lock"></i> Change Admin Passcode</h3>
+                <p class="text-sm mb-3 text-red-600">یہ پاس کوڈ صرف اس ایڈمن پینل کے لاگ ان کو تبدیل کرے گا۔</p>
+                
+                <div class="form-group">
+                    <label for="currentPasscode">Current Passcode:</label>
+                    <input type="password" id="currentPasscode" required>
+                </div>
+                <div class="form-group">
+                    <label for="newPasscode">New Passcode:</label>
+                    <input type="password" id="newPasscode" required>
+                </div>
+                <div class="form-group">
+                    <label for="confirmPasscode">Confirm New Passcode:</label>
+                    <input type="password" id="confirmPasscode" required>
+                </div>
+                
+                <button onclick="changeAdminPasscode()" class="bg-red-600 text-white p-2 rounded-lg font-semibold w-full hover:bg-red-700">
+                    <i class="fa-solid fa-key"></i> Change Admin Passcode
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // --- Authentication ---
+    function loginAdmin() {
+        const passcode = document.getElementById('passcode').value;
+        if (passcode === ADMIN_PASSCODE) {
+            localStorage.setItem('isAdminLoggedIn', 'true');
+            document.getElementById('loginModal').style.display = 'none';
+            document.getElementById('adminPanel').style.display = 'block';
+            loadRootMembersAdmin(); 
+            loadSettings(); 
+        } else {
+            alert("Invalid Passcode! (Current passcode: " + ADMIN_PASSCODE + ")");
+            document.getElementById('passcode').value = '';
+        }
+    }
+
+    function logoutAdmin() {
+        if(confirm("Are you sure you want to log out?")){
+            localStorage.removeItem('isAdminLoggedIn');
+            window.location.reload();
+        }
+    }
+
+    function checkLoginStatus() {
+        if (localStorage.getItem('isAdminLoggedIn') !== 'true') {
+            document.getElementById('loginModal').style.display = 'flex';
+        } else {
+            document.getElementById('loginModal').style.display = 'none';
+            document.getElementById('adminPanel').style.display = 'block';
+            loadRootMembersAdmin();
+            loadSettings();
+            loadMembers(); 
+        }
+    }
+
+    // --- Tab Switching ---
+    function openTab(tabName) {
+        document.querySelectorAll('.tab-content').forEach(tab => tab.style.display = 'none');
+        document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+        
+        document.getElementById(tabName).style.display = 'block';
+        document.querySelector(`.tab-button[onclick*="'${tabName}'"]`).classList.add('active');
+        
+        if (tabName === 'root') {
+            loadRootMembersAdmin(); 
+        } else if (tabName === 'member') {
+            loadMembers(); 
+        } else if (tabName === 'tools') {
+            loadInbox();
+        } else if (tabName === 'settings') {
+            loadSettings();
+        }
+    }
+
+    // ====================================================================
+    // 👑 ROOT & MEMBER MANAGEMENT LOGIC
+    // ====================================================================
+    
+    async function loadRootMembersAdmin() {
+        const { data, error } = await _supabase.from('family_data').select('*').is('parent_id', null).order('full_name', { ascending: true });
+        const rootMemberList = document.getElementById('rootMemberList');
+        rootMemberList.innerHTML = ''; 
+        if (error) { rootMemberList.innerHTML = `<tr><td colspan="4" class="text-red-500 text-center">Error loading data: ${error.message}</td></tr>`; return; }
+        if (data.length === 0) { rootMemberList.innerHTML = `<tr><td colspan="4" class="text-gray-500 text-center">No Root Members added yet.</td></tr>`; return; }
+        data.forEach(member => {
+            const row = rootMemberList.insertRow();
+            row.id = `root-row-${member.id}`;
+            row.innerHTML = `
+                <td>${member.id}</td>
+                <td>${member.full_name}</td>
+                <td>${member.relation || 'N/A'}</td>
+                <td class="flex gap-2 justify-center">
+                    <button onclick="editRootMember(${member.id}, '${member.full_name}', '${member.relation || ''}', '${member.gender}', '${member.dob || ''}')" class="bg-blue-500 text-white p-1 text-xs rounded hover:bg-blue-600"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+                    <button onclick="deleteRootMember(${member.id}, '${member.full_name}')" class="bg-red-500 text-white p-1 text-xs rounded hover:bg-red-600"><i class="fa-solid fa-trash"></i> Delete</button>
+                </td>
+            `;
+        });
+    }
+
+    function editRootMember(id, name, relation, gender, dob) {
+        document.getElementById('rootMemberId').value = id;
+        document.getElementById('rootFullName').value = name;
+        document.getElementById('rootRelation').value = relation;
+        document.getElementById('rootGender').value = gender;
+        document.getElementById('rootDOB').value = dob;
+        document.getElementById('rootFormTitle').innerText = 'Edit Root Member (ID: ' + id + ')';
+        document.getElementById('rootSubmitBtn').innerHTML = '<i class="fa-solid fa-save"></i> Update Root Member';
+        document.getElementById('rootCancelBtn').style.display = 'block';
+    }
+
+    function resetRootForm() {
+        document.getElementById('rootMemberId').value = '';
+        document.getElementById('rootFullName').value = '';
+        document.getElementById('rootRelation').value = '';
+        document.getElementById('rootGender').value = 'M';
+        document.getElementById('rootDOB').value = '';
+        document.getElementById('rootFormTitle').innerText = 'Add New Root Member';
+        document.getElementById('rootSubmitBtn').innerHTML = '<i class="fa-solid fa-plus"></i> Add Root Member';
+        document.getElementById('rootCancelBtn').style.display = 'none';
+    }
+
+    async function addOrUpdateRootMember() {
+        const id = document.getElementById('rootMemberId').value;
+        const fullName = document.getElementById('rootFullName').value.trim();
+        const relation = document.getElementById('rootRelation').value.trim() || null;
+        const gender = document.getElementById('rootGender').value;
+        const dob = document.getElementById('rootDOB').value || null;
+        if (!fullName) { alert("Full Name is required."); return; }
+        const memberData = { full_name: fullName, relation: relation, gender: gender, dob: dob, parent_id: null, is_alive: true };
+        let result = id ? await _supabase.from('family_data').update(memberData).eq('id', id) : await _supabase.from('family_data').insert([memberData]);
+        if (result.error) { alert(`Error ${id ? 'Updating' : 'Adding'} Root Member: ${result.error.message}`); } else { alert(`Root Member ${id ? 'Updated' : 'Added'} successfully!`); resetRootForm(); loadRootMembersAdmin(); loadMembers(); }
+    }
+
+    async function deleteRootMember(id, name) {
+        if (!confirm(`WARNING: Deleting Root Member '${name}' (ID: ${id}) will remove the entry from the table. If this person has descendants, their 'parent_id' will become invalid, potentially breaking the tree. Proceed?`)) { return; }
+        const { error: rootError } = await _supabase.from('family_data').delete().eq('id', id);
+        if (rootError) { alert(`Error deleting root member: ${rootError.message}`); return; }
+        alert(`Root Member '${name}' deleted successfully! Remember to check descendants in the Member Data tab.`);
+        loadRootMembersAdmin(); loadMembers(); 
+    }
+
+    async function loadMembers() {
+        const { data, error } = await _supabase.from('family_data').select('*').order('full_name', { ascending: true });
+        const memberListBody = document.getElementById('memberList');
+        const parentDropdown = document.getElementById('parentId');
+        memberListBody.innerHTML = '';
+        parentDropdown.innerHTML = '<option value="">-- No Parent (Root Member) --</option>';
+        allMembers = [];
+        if (error) { memberListBody.innerHTML = `<tr><td colspan="5" class="text-red-500 text-center">Error loading members: ${error.message}</td></tr>`; return; }
+        allMembers = data; 
+        data.forEach(member => {
+            parentDropdown.innerHTML += `<option value="${member.id}">${member.full_name} (ID: ${member.id})</option>`;
+            const parentName = member.parent_id ? data.find(p => p.id === member.parent_id)?.full_name || 'N/A' : 'ROOT';
+            const row = memberListBody.insertRow();
+            row.id = `member-row-${member.id}`;
+            row.innerHTML = `
+                <td>${member.id}</td>
+                <td>${member.full_name}</td>
+                <td>${parentName}</td>
+                <td>${member.relation || 'N/A'}</td>
+                <td class="flex gap-2 justify-start">
+                    <button onclick="editMember(${member.id})" class="bg-blue-500 text-white p-1 text-xs rounded hover:bg-blue-600"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+                    <button onclick="deleteMember(${member.id}, '${member.full_name}')" class="bg-red-500 text-white p-1 text-xs rounded hover:bg-red-600"><i class="fa-solid fa-trash"></i> Delete</button>
+                </td>
+            `;
+        });
+        const currentMemberId = document.getElementById('memberId').value;
+        if (currentMemberId) {
+            const currentMember = allMembers.find(m => m.id == currentMemberId);
+            if (currentMember && currentMember.parent_id) { parentDropdown.value = currentMember.parent_id; }
+        }
+    }
+
+    function editMember(memberId) {
+        const member = allMembers.find(m => m.id === memberId);
+        if (!member) { alert("Member not found in local data."); return; }
+        document.getElementById('memberId').value = member.id;
+        document.getElementById('fullName').value = member.full_name;
+        document.getElementById('parentId').value = member.parent_id || '';
+        document.getElementById('relation').value = member.relation || '';
+        document.getElementById('gender').value = member.gender;
+        document.getElementById('isAlive').value = String(member.is_alive);
+        document.getElementById('dob').value = member.dob || '';
+        document.getElementById('imageUrl').value = member.image_url || '';
+        
+        document.getElementById('memberFormTitle').innerText = `Edit Member (ID: ${member.id})`;
+        document.getElementById('memberSubmitBtn').innerHTML = '<i class="fa-solid fa-save"></i> Update Member';
+        document.getElementById('memberCancelBtn').style.display = 'block';
+    }
+
+    function resetMemberForm() {
+        document.getElementById('memberId').value = '';
+        document.getElementById('fullName').value = '';
+        document.getElementById('parentId').value = '';
+        document.getElementById('relation').value = '';
+        document.getElementById('gender').value = 'M';
+        document.getElementById('isAlive').value = 'true';
+        document.getElementById('dob').value = '';
+        document.getElementById('imageUrl').value = '';
+        
+        document.getElementById('memberFormTitle').innerText = 'Add New Member';
+        document.getElementById('memberSubmitBtn').innerHTML = '<i class="fa-solid fa-user-plus"></i> Add Member';
+        document.getElementById('memberCancelBtn').style.display = 'none';
+        loadMembers(); 
+    }
+
+    async function addOrUpdateMember() {
+        const id = document.getElementById('memberId').value;
+        const fullName = document.getElementById('fullName').value.trim();
+        const parentId = document.getElementById('parentId').value || null; 
+        const relation = document.getElementById('relation').value.trim() || null;
+        const gender = document.getElementById('gender').value;
+        const isAlive = document.getElementById('isAlive').value === 'true';
+        const dob = document.getElementById('dob').value || null;
+        const imageUrl = document.getElementById('imageUrl').value.trim() || null;
+        
+        if (!fullName || !relation) { alert("Full Name and Relation are required."); return; }
+        if (id && parentId == id) { alert("A member cannot be their own parent. Please select a different parent."); return; }
+        
+        const memberData = { full_name: fullName, parent_id: parentId ? parseInt(parentId) : null, relation: relation, gender: gender, is_alive: isAlive, dob: dob, image_url: imageUrl };
+        
+        let result = id ? await _supabase.from('family_data').update(memberData).eq('id', id) : await _supabase.from('family_data').insert([memberData]);
+        if (result.error) { alert(`Error ${id ? 'Updating' : 'Adding'} Member: ${result.error.message}`); } else { alert(`Member ${id ? 'Updated' : 'Added'} successfully!`); resetMemberForm(); loadMembers(); loadRootMembersAdmin(); }
+    }
+
+    async function deleteMember(id, name) {
+        const hasChildren = allMembers.some(m => m.parent_id === id);
+        let confirmMessage = `Are you sure you want to delete member '${name}' (ID: ${id})?`;
+        if (hasChildren) { confirmMessage = `WARNING: Member '${name}' has descendants. Deleting them will make their children 'orphans' (their parent_id will become invalid). You must manually update those children afterward. Are you sure you want to proceed?`; }
+        if (!confirm(confirmMessage)) { return; }
+        const { error } = await _supabase.from('family_data').delete().eq('id', id);
+        if (error) { alert(`Error deleting member: ${error.message}`); } else { alert(`Member '${name}' deleted successfully!`); loadMembers(); loadRootMembersAdmin(); }
+    }
+
+    // ====================================================================
+    // 🛠️ TOOLS LOGIC 
+    // ====================================================================
+    
+    async function loadInbox() {
+        const inboxList = document.getElementById('inboxList');
+        inboxList.innerHTML = '<tr><td colspan="5" class="text-gray-500 text-center">Loading...</td></tr>';
+        const { data, error } = await _supabase.from('contact_requests').select('*').order('id', { ascending: false }); 
+        if (error) { inboxList.innerHTML = `<tr><td colspan="5" class="text-red-500 text-center">Error loading inbox. Make sure 'contact_requests' table exists: ${error.message}</td></tr>`; return; }
+        contactRequests = data;
+        if (data.length === 0) { inboxList.innerHTML = `<tr><td colspan="5" class="text-gray-500 text-center">No contact requests found.</td></tr>`; return; }
+        inboxList.innerHTML = '';
+        data.forEach(request => {
+            const snippet = request.message.substring(0, 40) + (request.message.length > 40 ? '...' : '');
+            const row = inboxList.insertRow();
+            row.innerHTML = `
+                <td>${request.id}</td>
+                <td>${request.sender_name || 'N/A'}</td>
+                <td>${request.sender_contact || 'N/A'}</td>
+                <td>${snippet}</td>
+                <td>
+                    <button onclick="viewMessage(${request.id})" class="bg-green-500 text-white p-1 text-xs rounded hover:bg-green-600"><i class="fa-solid fa-eye"></i> View</button>
+                    <button onclick="deleteMessage(${request.id})" class="bg-red-500 text-white p-1 text-xs rounded hover:bg-red-600 ml-1"><i class="fa-solid fa-trash"></i></button>
+                </td>
+            `;
+        });
+    }
+    
+    function viewMessage(id) {
+        const request = contactRequests.find(r => r.id === id);
+        if (request) {
+            alert(`Message ID: ${id}\nSender: ${request.sender_name || 'N/A'}\nContact: ${request.sender_contact || 'N/A'}\n\nMessage:\n${request.message}`);
+        }
+    }
+    
+    async function deleteMessage(id) {
+        if (!confirm(`Are you sure you want to delete contact request ID ${id}?`)) { return; }
+        const { error } = await _supabase.from('contact_requests').delete().eq('id', id);
+        if (error) { alert(`Error deleting message: ${error.message}`); } else { alert("Message deleted successfully!"); loadInbox(); }
+    }
+
+    async function downloadBackup() {
+        const { data, error } = await _supabase.from('family_data').select('*');
+        if (error) { alert(`Error fetching data for backup: ${error.message}`); return; }
+        const dataStr = JSON.stringify(data, null, 2);
+        const blob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const date = new Date().toISOString().slice(0, 10);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `shajra_backup_${date}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        alert("Backup file downloaded successfully!");
+    }
+
+
+    // ====================================================================
+    // ⚙️ SITE SETTINGS LOGIC 
+    // ====================================================================
+
+    // Loads all settings 
+    async function loadSettings() {
+        const { data } = await _supabase.from('site_config').select('*').limit(1);
+        if (data?.[0]){
+            const settings = data[0];
+            document.getElementById('siteName').value = settings.site_name || '';
+            document.getElementById('aboutUrdu').value = settings.about_urdu || '';
+            document.getElementById('contactDesc').value = settings.contact_desc || '';
+            
+            // ✅ Contact Number: 'phone'
+            document.getElementById('phone').value = settings.phone || '';
+            
+            // ✅ WhatsApp Number: 'whatsapp'
+            document.getElementById('whatsapp').value = settings.whatsapp || ''; 
+
+            document.getElementById('features').value = settings.features || '';
+        }
+    }
+
+    /** * Updates a single column in the site_config table.
+     * @param {string} elementId - The ID of the HTML input element (e.g., 'phone', 'siteName')
+     * @param {string} columnName - The name of the Supabase column (e.g., 'phone', 'site_name')
+     */
+    async function updateSingleSetting(elementId, columnName) {
+        const value = document.getElementById(elementId).value;
+        
+        // Create the object with only the specific column to update
+        const updateData = {
+            [columnName]: value
+        };
+
+        // 1. Find the existing row ID
+        const { data: existing } = await _supabase.from('site_config').select('id').limit(1);
+        
+        let result;
+        
+        if (existing && existing.length > 0) {
+            // 2. Update the existing record
+            result = await _supabase.from('site_config')
+                .update(updateData)
+                .eq('id', existing[0].id);
+        } else {
+            // 3. If no record exists, insert a new one
+            result = await _supabase.from('site_config').insert([updateData]);
+        }
+
+        if (result.error) { 
+            alert(`Error saving ${columnName}: ${result.error.message}`); 
+        } else { 
+            alert(`${columnName} saved successfully!`); 
+            loadSettings(); // Reload all settings to confirm
+        }
+    }
+
+
+    /** Changes the Admin Panel Passcode and saves it to Local Storage. */
+    function changeAdminPasscode() {
+        const current = document.getElementById('currentPasscode').value;
+        const newPass = document.getElementById('newPasscode').value;
+        const confirmPass = document.getElementById('confirmPasscode').value;
+
+        if (current !== ADMIN_PASSCODE) {
+            alert("Error: Current Passcode is incorrect.");
+            return;
+        }
+
+        if (newPass.length === 0) {
+            alert("Error: New Passcode cannot be empty.");
+            return;
+        }
+
+        if (newPass !== confirmPass) {
+            alert("Error: New Passcode and Confirmation do not match.");
+            return;
+        }
+        
+        if (newPass === ADMIN_PASSCODE) {
+            alert("Error: New Passcode cannot be the same as the current one.");
+            return;
+        }
+
+        // 1. Update the local variable
+        ADMIN_PASSCODE = newPass;
+
+        // 2. Save the new passcode to Local Storage
+        localStorage.setItem('shajra_admin_passcode', newPass);
+
+        // 3. Clear the form fields
+        document.getElementById('currentPasscode').value = '';
+        document.getElementById('newPasscode').value = '';
+        document.getElementById('confirmPasscode').value = '';
+
+        alert("Admin Passcode successfully changed! Please note this change is stored locally on your browser.");
+        
+        // Force logout to test the new passcode
+        logoutAdmin();
+    }
+
+    // --- Initialization ---
+    document.addEventListener('DOMContentLoaded', checkLoginStatus);
+</script>
 </body>
 </html>

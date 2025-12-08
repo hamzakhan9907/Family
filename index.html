@@ -1,257 +1,667 @@
 <!DOCTYPE html>
 <html lang="ur">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Family Shajra</title>
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;700;800&display=swap" rel="stylesheet">
-    
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background: #f8f9fa; text-align: center; }
-        
-        /* HEADER */
-        header { background-color: #2c3e50; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        .site-title { font-family: 'Poppins', sans-serif; font-size: 20px; font-weight: 800; margin: 0; background: linear-gradient(to right, #4ade80, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; color: transparent; filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.3)); }
-        .admin-btn { background: linear-gradient(135deg, #ff416c, #ff4b2b); color: white; border: none; padding: 8px 15px; border-radius: 25px; cursor: pointer; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 12px; text-decoration: none; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 10px rgba(255, 75, 43, 0.3); }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Family Shajra</title>
 
-        /* NAVBAR */
-        .navbar { background: #34495e; padding: 0; display: flex; justify-content: space-around; align-items: center; height: 25px; }
-        .nav-btn { background: none; border: none; color: #bdc3c7; display: flex; flex-direction: row; align-items: center; text-decoration: none; font-size: 11px; cursor: pointer; transition: 0.3s; padding: 0 10px; height: 100%; }
-        .nav-btn i { font-size: 14px; margin-right: 5px; color: #bdc3c7; margin-bottom: 0; }
-        .nav-btn.active i, .nav-btn:hover i { color: #ffd700; }
-        .nav-btn.active, .nav-btn:hover { color: white; background: rgba(255,255,255,0.1); }
-        .dropdown { position: relative; display: inline-block; height: 100%; display: flex; align-items: center; }
-        .dropdown-content { display: none; position: absolute; right: 0; top: 25px; background-color: #fff; min-width: 140px; box-shadow: 0px 8px 16px rgba(0,0,0,0.2); z-index: 10; border-radius: 8px; border: 1px solid #eee; }
-        .dropdown-content a { color: #333; padding: 10px 14px; text-decoration: none; display: block; border-bottom: 1px solid #f1f1f1; font-size: 13px; text-align: left; cursor: pointer; }
-        .show { display: block; }
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script>
+// IMPORTANT: Supabase connection details (Moved to HEAD for faster loading and combined for cleaner code)
+const supabaseUrl = 'https://ojphjodmpyblyfyinacb.supabase.co';
+const k1 = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qcGhqb2RtcHlibHlmeWluYWN";
+const k2 = "iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ0MTUwNTAsImV4cCI6MjA3OTk5MTA1MH0";
+const k3 = ".mwKu_g5_OT_89KcAeeSsY8IMlnakV2nQVtKRhWWTcDw";
+const SUPABASE_ANON_KEY = k1 + k2 + k3; // Key ko jod diya gaya hai
+const _supabase = supabase.createClient(supabaseUrl, SUPABASE_ANON_KEY);
+</script>
 
-        /* UPLOAD AREA */
-        .tree-node-container { background: white; width: 80%; max-width: 260px; margin: 40px auto; padding: 0 !important; padding-bottom: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.08); position: relative; border: 1px solid #f0f0f0; }
-        h3 { margin-top: 15px; margin-bottom: 8px; color: #2c3e50; font-size: 16px; }
-        input { width: 90%; display: block; margin: 5px auto; padding: 8px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; box-sizing: border-box; outline: none; }
-        input:focus { border-color: #3ecf8e; }
-        .file-label { width: 90%; display: block; margin: 5px auto; cursor: pointer; background: #f8f9fa; padding: 8px; border-radius: 8px; color: #666; font-size: 12px; border: 1px dashed #ccc; box-sizing: border-box; }
-        .add-btn-circle { background: #3ecf8e; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 18px; cursor: pointer; box-shadow: 0 3px 8px rgba(62, 207, 142, 0.4); display: flex; justify-content: center; align-items: center; position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%); transition: all 0.3s ease; }
-        .saved-node { margin-top: 15px; padding-top: 10px; border-top: 1px dashed #eee; width: 90%; margin-left: auto; margin-right: auto; }
-        #savedImage { width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 2px solid #3ecf8e; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 3px; }
-        #savedName { color: #2c3e50; font-weight: bold; font-size: 14px; margin: 0; }
-        #status { margin-top: 10px; color: #555; font-size: 11px; font-weight: bold; margin-bottom: 0; }
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script> 
 
-        /* MODAL - REVERTED TO ORIGINAL STYLE */
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
-        .modal-content { background: white; width: 85%; max-width: 320px; padding: 20px; border-radius: 15px; text-align: center; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.2); animation: fadeIn 0.3s ease; max-height: 90vh; overflow-y: auto; }
-        @keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
-        .modal-header { font-size: 18px; font-weight: bold; color: #333; margin-bottom: 10px; border-bottom: 2px solid #3ecf8e; display: inline-block; padding-bottom: 5px; }
-        .close-x { position: absolute; top: 15px; right: 20px; font-size: 20px; color: #999; cursor: pointer; }
+<style>
+/* ----------------- GLOBAL ----------------- */
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin:0; padding:0; background:#f0f2f5; text-align:center; }
+header { background-color: #2c3e50; padding:10px 15px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 4px 6px rgba(0,0,0,0.1); position:sticky; top:0; z-index:1000; }
+.site-title { font-family:'Poppins',sans-serif; font-size:20px; font-weight:800; margin:0; background:linear-gradient(to right,#4ade80,#3b82f6); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.admin-btn { background:#e74c3c; color:white; border:none; padding:6px 14px; border-radius:20px; cursor:pointer; font-family:'Poppins',sans-serif; font-size:12px; text-decoration:none; transition:0.3s; }
+.shajra-navbar { background:#34495e; padding:0; display:flex; justify-content:space-around; align-items:center; height:25px; }
+.shajra-nav-btn { background:none; border:none; color:#bdc3c7; display:flex; align-items:center; text-decoration:none; font-size:11px; cursor:pointer; padding:0 10px; height:100%; transition:all 0.2s; }
+.shajra-nav-btn i { font-size:12px; margin-right:4px; color:#bdc3c7; }
+.shajra-nav-btn:hover { background-color:#496075; color:white; } 
+.shajra-nav-btn:hover i { color:white; }
+.shajra-dropdown { position:relative; }
+.shajra-dropdown-menu { display:none; position:absolute; right:0; top:25px; background:#fff; min-width:160px; box-shadow:0px 10px 25px rgba(0,0,0,0.15); z-index:100; border-radius:8px; border:1px solid #f0f0f0; overflow:hidden; }
+.shajra-dropdown-menu a { color:#333; padding:10px 16px; text-decoration:none; display:flex; align-items:center; gap:10px; font-size:13px; font-weight:500; border-bottom:1px solid #f9f9f9; text-align:left; transition:background 0.2s; }
+.shajra-dropdown-menu a:last-child { border-bottom:none; }
+.shajra-dropdown-menu a:hover { background-color:#f0f7ff; color:#2196f3; }
+.shajra-dropdown-menu i { width:18px; text-align:center; color:#7f8c8d; }
+.show { display:block; }
 
-        /* ANALYTICS STYLES (New Feature) */
-        .analytics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-        .stat-card { background: #f8f9fa; padding: 10px; border-radius: 12px; border: 1px solid #eee; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
-        .stat-number { font-size: 20px; font-weight: 800; color: #2c3e50; display: block; }
-        .stat-label { font-size: 10px; color: #777; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-        .fun-fact-box { grid-column: span 2; background: #e3f2fd; border-left: 4px solid #2196f3; padding: 12px; margin-top: 5px; text-align: left; border-radius: 8px; }
-        .fun-item { font-size: 12px; color: #444; margin-bottom: 4px; display: flex; justify-content: space-between; border-bottom: 1px dashed #bdddf7; padding-bottom: 2px; }
+/* ---------- MODALS (Common Styles) ---------- */
+.shajra-modal-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:1000; justify-content:center; align-items:center; backdrop-filter:blur(2px); }
+.shajra-modal-content { background:white; width:85%; max-width:340px; padding:25px; border-radius:16px; text-align:center; position:relative; max-height:90vh; overflow-y:auto; box-shadow:0 10px 30px rgba(0,0,0,0.2); }
+.modal-header { font-size:20px; font-weight:700; color:#333; margin-bottom:15px; border-bottom:3px solid #3ecf8e; display:inline-block; padding-bottom:5px; }
+.close-x { position:absolute; top:15px; right:20px; font-size:24px; color:#aaa; cursor:pointer; transition:0.2s; }
+.close-btn-bottom { background:#f1f2f6; border:none; padding:12px 0; width:100%; border-radius:10px; font-weight:bold; color:#555; cursor:pointer; margin-top:10px; }
 
-        /* ABOUT STYLES - REVERTED */
-        .about-title { color: #3ecf8e; font-weight: bold; font-size: 16px; margin: 15px 0; }
-        .about-title span { color: #666; } 
-        .urdu-text { font-family: 'Noto Nastaliq Urdu', serif; font-size: 14px; color: #555; margin-bottom: 15px; line-height: 1.6; }
-        
-        .contact-section { margin: 15px 0; padding: 15px; background: #f9f9f9; border-radius: 8px; border: 1px solid #eee; }
-        .contact-title-small { color: #2c3e50; font-weight: 800; font-size: 15px; margin-bottom: 8px; text-transform: uppercase; border-bottom: 1px solid #ddd; padding-bottom: 5px; display: block; }
-        .contact-desc { color: #555; font-size: 12px; margin-bottom: 10px; line-height: 1.4; }
-        .phone-display { color: #2c3e50; font-size: 18px; font-weight: 800; margin: 5px 0 15px 0; letter-spacing: 1px; }
-        .contact-btn { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 10px; margin: 5px 0; border-radius: 8px; text-decoration: none; font-weight: bold; color: white; font-size: 14px; transition: transform 0.2s; }
-        .contact-btn:hover { transform: translateY(-2px); }
-        .btn-whatsapp { background-color: #25D366; }
-        .close-btn-bottom { background: #eee; border: none; padding: 10px 0; width: 100%; border-radius: 8px; font-weight: bold; color: #333; cursor: pointer; margin-top: 10px; }
-        
-        .features-box { background: #e3f2fd; border-left: 4px solid #2196f3; padding: 15px; border-radius: 5px; text-align: left; font-size: 12px; color: #333; margin-bottom: 20px; }
-        .features-box ul { padding-left: 20px; margin: 5px 0; }
-    </style>
+
+/* ---------------------------------------------------------------------------------- */
+/* ---------- HEADING & DROPDOWN STYLES (NEW)  ----- */
+/* ---------------------------------------------------------------------------------- */
+.heading-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 90%;
+    margin: 25px auto 10px auto; 
+    padding: 0 10px;
+    flex-wrap: wrap; 
+}
+/* Flex-grow 1 allows the center element to take up most space */
+.family-name-display {
+    font-family: 'Noto Nastaliq Urdu', serif;
+    font-size: 20px; 
+    font-weight: 700;
+    color: #2c3e50;
+    margin: 0; 
+    border-bottom: 3px solid #4ade80; 
+    display: inline-block;
+    padding-bottom: 3px;
+    text-align: center; /* Center the text */
+    flex-grow: 1; /* Allow it to grow */
+    order: 2; /* Place it in the center */
+}
+.root-select-container {
+    flex-grow: 0;
+    max-width: 150px;
+    text-align: left;
+    margin-bottom: 5px;
+    order: 1; /* Place it on the left */
+}
+#rootMemberSelect {
+    padding: 6px 8px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 12px;
+    width: 100%;
+}
+.empty-space-filler {
+    flex-grow: 0;
+    max-width: 150px;
+    min-width: 30px; /* To maintain some spacing */
+    order: 3; /* Place it on the right */
+}
+
+/* For very small screens, make selection full width */
+@media (max-width: 400px) {
+    .heading-container {
+        flex-direction: column-reverse;
+        align-items: stretch;
+    }
+    .root-select-container {
+        max-width: 100%;
+        margin-bottom: 10px;
+    }
+    .family-name-display {
+        text-align: center;
+    }
+    .empty-space-filler {
+        display: none; /* Hide filler on mobile */
+    }
+}
+
+
+/* ---------------------------------------------------------------------------------- */
+/* ---------- MEMBER DETAIL MODAL STYLES  ----- */
+/* ---------------------------------------------------------------------------------- */
+#detailModal .shajra-modal-content {
+    max-width: 400px;
+}
+#detailModal #modalContentArea {
+    text-align: center;
+}
+#detailModal .modal-profile-img { 
+    width: 120px; 
+    height: 120px; 
+    border-radius: 50%; 
+    object-fit: cover; 
+    margin: 0 auto 15px auto; 
+    border: 5px solid #a0522d; 
+    box-shadow: 0 0 0 3px #fff8e1; 
+    transition: transform 0.3s;
+}
+#detailModal .modal-profile-img:hover {
+    transform: scale(1.05);
+}
+#detailModal .modal-full-name { 
+    font-size: 28px; 
+    font-weight: 800; 
+    color: #2c3e50; 
+    margin-bottom: 5px; 
+    text-transform: capitalize;
+    text-align: center; 
+}
+#detailModal .modal-relation {
+    font-size: 14px;
+    color: #888;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+    text-align: center; 
+}
+/* Data rows need LTR alignment inside the container */
+#detailModal .detail-data-section {
+    text-align: left;
+    padding: 0 10px; 
+}
+#detailModal .modal-data-row { 
+    display: flex; 
+    justify-content: space-between; 
+    padding: 10px 5px; 
+    border-bottom: 1px solid #f0f0f0; 
+    font-size: 14px; 
+}
+#detailModal .modal-data-row:last-child {
+    border-bottom: none;
+}
+#detailModal .modal-data-row span:first-child { 
+    font-weight: 600; 
+    color: #555; 
+    text-align: right; 
+}
+#detailModal .modal-data-row span:last-child { 
+    color: #222; 
+    font-weight: 700;
+    text-align: left; 
+}
+
+
+/* ---------------------------------------------------------------------------------- */
+/* ---------- ANALYTICS MODAL STYLES  ----- */
+/* ---------------------------------------------------------------------------------- */
+#analyticsModal .analytics-stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+#analyticsModal .analytics-stat-card {
+    background: #f0f8ff; 
+    border: 1px solid #b3e5fc;
+    border-radius: 8px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+#analyticsModal .stat-number {
+    font-size: 24px;
+    font-weight: 800;
+    color: #1e88e5;
+}
+#analyticsModal .stat-urdu {
+    font-size: 12px;
+    color: #555;
+}
+#analyticsModal .analytics-fun-box {
+    background: #fffbe6;
+    border: 1px solid #ffe082;
+    border-radius: 8px;
+    padding: 15px;
+    text-align: left;
+}
+#analyticsModal .fun-item {
+    font-size: 13px;
+    color: #333;
+    padding: 5px 0;
+    border-bottom: 1px dotted #ccc;
+    display: flex;
+    justify-content: space-between;
+}
+#analyticsModal .fun-item span {
+    font-weight: 700;
+    color: #d81b60;
+}
+
+
+/* ---------------------------------------------------------------------------------- */
+/* ---------- ABOUT MODAL SPECIFIC STYLES  ----- */
+/* ---------------------------------------------------------------------------------- */
+.about-urdu-text-style {
+    font-family: 'Noto Nastaliq Urdu', serif;
+    font-size: 14px;
+    color: #333;
+    padding: 15px;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    margin-bottom: 15px;
+    text-align: center; 
+    line-height: 1.8;
+}
+
+.about-contact-box-style {
+    background: #e6f7ff; 
+    border: 1px solid #b3e5fc;
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.contact-whatsapp-btn-style {
+    display: block;
+    background: #25d366;
+    color: white;
+    padding: 10px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    margin-top: 10px;
+    transition: background 0.3s;
+    text-align: center;
+}
+.contact-whatsapp-btn-style:hover {
+    background: #128c7e;
+}
+
+.features-list-box-style {
+    text-align: left;
+    background: #fdfde6; 
+    border: 1px solid #fff3cd;
+    border-radius: 8px;
+    padding: 15px;
+}
+.features-list-box-style strong {
+    display: block;
+    margin-bottom: 5px;
+    color: #856404;
+    font-size: 14px;
+}
+.features-list-box-style ul {
+    list-style: disc;
+    margin-left: 20px;
+    font-size: 12px;
+    color: #555;
+    padding: 0;
+}
+.features-list-box-style ul li {
+    padding: 2px 0;
+}
+
+/* ------------------------------------------------------------- */
+/* ---------- FAMILY TREE STYLES ------------------------------- */
+/* ------------------------------------------------------------- */
+.family-tree { font-family: 'Inter', sans-serif; text-align: center; padding: 30px; background-color: #fcfbf6; overflow-x: auto; min-height: 400px; }
+.family-tree ul { padding-top: 25px; position: relative; list-style: none; padding-left: 0; display: flex; justify-content: center; transition: all 0.5s ease-in-out; margin: 0; }
+.family-tree > ul { padding-top: 0; }
+.family-tree li { list-style-type: none; position: relative; padding: 25px 15px 0 15px; flex-shrink: 0; transition: all 0.5s ease-in-out; }
+.family-tree > ul > li { padding-top: 0; }
+.family-tree li .member-card-wrapper { border: 2px solid #a0522d; background-color: #fff8e1; padding: 10px; text-decoration: none; display: inline-flex; flex-direction: column; align-items: center; border-radius: 12px; transition: all 0.3s ease; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); min-width: 140px; position: relative; cursor: pointer; }
+.family-tree li .member-card-wrapper:hover { background: #e7c29e; border-color: #a0522d; transform: translateY(-2px); box-shadow: 0 6px 10px -1px rgba(0, 0, 0, 0.15); }
+.member-img { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 3px solid #a0522d; margin-bottom: 5px; transition: transform 0.3s; }
+.member-img:hover { transform: scale(1.05); }
+.member-info { color: #5d4037; font-size: 0.85rem; font-weight: 700; line-height: 1.2; text-transform: uppercase; text-align: center; padding-top: 5px; }
+.collapse-btn { position: absolute; top: -12px; right: -12px; background: #3b82f6; color: white; border: 2px solid #fff; border-radius: 50%; width: 25px; height: 25px; display: flex; justify-content: center; align-items: center; font-size: 14px; cursor: pointer; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); z-index: 10; transition: background 0.3s; }
+.collapse-btn:hover { background: #1e40af; }
+.collapsed > ul { display: none; }
+.collapsed > .member-card-wrapper > .collapse-btn { background: #10b981; }
+/* --- Connecting Lines (unchanged) --- */
+.family-tree li::after { content: ''; position: absolute; top: 0; left: 50%; border-left: 1px solid #8d6e63; border-top: 1px solid #8d6e63; width: 50%; height: 25px; }
+.family-tree li::before { content: ''; position: absolute; top: 0; right: 50%; border-top: 1px solid #8d6e63; width: 50%; height: 25px; }
+.family-tree ul ul::before { content: ''; position: absolute; top: 0; left: 50%; border-left: 1px solid #8d6e63; width: 0; height: 25px; }
+.family-tree ul:first-child > li::before, .family-tree ul:first-child > li::after { content: none; height: 0; }
+.family-tree li:first-child::before { border: none; }
+.family-tree li:last-child:not(:only-child)::after { border-top: none; width: 0; }
+.family-tree li:only-child::before, .family-tree li:only-child::after { border: none; }
+.family-tree li:only-child::after { border-left: 1px solid #8d6e63 !important; }
+</style>
 </head>
 <body>
 
-    <header>
-        <div class="site-title" id="mainTitle">Loading...</div>
-        <a href="admin.html" class="admin-btn"><i class="fa-solid fa-user-shield"></i> Admin</a>
-    </header>
+<header>
+    <div class="site-title" id="mainTitle">Loading...</div>
+    <a href="admin.html" class="admin-btn"><i class="fa-solid fa-lock"></i> Admin</a>
+</header>
 
-    <div class="navbar">
-        <a href="index.html" class="nav-btn active"><i class="fa-solid fa-house"></i> Home</a>
-        
-        <button onclick="openAnalytics()" class="nav-btn"><i class="fa-solid fa-chart-pie"></i> Analytics</button>
-        
-        <button onclick="openAbout()" class="nav-btn"><i class="fa-solid fa-circle-info"></i> About</button>
-        
-        <a href="#" class="nav-btn"><i class="fa-solid fa-magnifying-glass"></i> Search</a>
-        <div class="dropdown">
-            <button onclick="toggleMenu()" class="nav-btn"><i class="fa-solid fa-bars"></i> More</button>
-            <div id="myDropdown" class="dropdown-content">
-                <a href="#"><i class="fa-solid fa-scroll"></i> History</a>
-                <a href="#"><i class="fa-solid fa-users"></i> Members</a>
-                <a onclick="openAbout()"><i class="fa-solid fa-phone"></i> Contact</a>
-            </div>
+<div class="shajra-navbar">
+    <a href="index.html" class="shajra-nav-btn active"><i class="fa-solid fa-house-chimney"></i> Home</a>
+    <button onclick="openAnalytics()" class="shajra-nav-btn"><i class="fa-solid fa-chart-pie"></i> Stats</button>
+    <button onclick="openAbout()" class="shajra-nav-btn"><i class="fa-solid fa-circle-info"></i> About</button>
+    <div class="shajra-dropdown">
+        <button onclick="toggleMenu()" class="shajra-nav-btn"><i class="fa-solid fa-bars-staggered"></i> More</button>
+        <div id="myDropdown" class="shajra-dropdown-menu">
+            <a href="#"><i class="fa-solid fa-clock-rotate-left"></i> History</a>
+            <a href="#"><i class="fa-solid fa-users-line"></i> All Members</a>
+            <a href="#"><i class="fa-solid fa-magnifying-glass"></i> Search</a>
+            <a onclick="openAbout()"><i class="fa-solid fa-headset"></i> Contact Us</a>
         </div>
     </div>
+</div>
 
-    <div class="tree-node-container">
-        <h3>Naya Member</h3>
-        <input type="text" id="nameInput" placeholder="Naam likhein...">
-        <label for="imageInput" class="file-label"><i class="fa-solid fa-camera"></i> Tasveer Chunein<input type="file" id="imageInput" accept="image/*" style="display: none;"></label>
-        <div id="savedNodeArea"><p id="status"></p><div class="saved-node" id="displayArea" style="display: none;"><img id="savedImage" src="" alt="Saved Image"><h2 id="savedName"></h2></div></div>
-        <button onclick="uploadData()" id="btn" class="add-btn-circle"><i class="fa-solid fa-plus"></i></button>
+<div class="heading-container">
+    <div class="root-select-container">
+        <select id="rootMemberSelect" onchange="loadFamilyTree(this.value)">
+            <option value="">-- فیملی کا انتخاب کریں --</option>
+        </select>
     </div>
+    <span class="family-name-display" id="currentFamilyName">
+        <i class="fa-solid fa-sitemap"></i> خاندانی شجرہ
+    </span>
+    <div class="empty-space-filler"></div> </div>
 
-    <div id="analyticsModal" class="modal-overlay">
-        <div class="modal-content">
-            <span class="close-x" onclick="closeAnalytics()">&times;</span>
-            <div class="modal-header"><i class="fa-solid fa-chart-simple"></i> Analytics</div>
-            
-            <div class="analytics-grid">
-                <div class="stat-card" style="grid-column: span 2;">
-                    <span class="stat-number" id="statTotal">0</span>
-                    <span class="stat-label">Total Members</span>
-                    <span style="font-size:11px;color:#3ecf8e;">کل افراد</span>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-number" id="statMale" style="font-size: 16px;">--</span>
-                    <span class="stat-label">Male/Female</span>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-number" id="statAlive" style="font-size: 16px;">--</span>
-                    <span class="stat-label">Alive/Deceased</span>
-                </div>
-            </div>
 
-            <div class="fun-fact-box">
-                <div style="font-weight:bold;margin-bottom:5px;">Dilchasp Maloomat:</div>
-                <div class="fun-item">Sabse Buzurg <span id="statOldest">--</span></div>
-                <div class="fun-item">Sabse Chota <span id="statYoungest">--</span></div>
-                <div class="fun-item">Sabse Zyada Naam <span id="statCommonName">Loading...</span></div>
-            </div>
+<div class="family-tree" id="visualTreeContainer">
+    <div style="color:#999; margin-top:50px;"><i class="fa-solid fa-spinner fa-spin"></i> فیملی لوڈ ہو رہی ہے...</div>
+</div>
 
-            <button class="close-btn-bottom" onclick="closeAnalytics()">Close</button>
+
+<div id="detailModal" class="shajra-modal-overlay">
+    <div class="shajra-modal-content">
+        <span class="close-x" onclick="closeDetail()">&times;</span>
+        <div class="modal-header"><i class="fa-solid fa-user-circle"></i> ممبر تفصیل</div>
+        <div id="modalContentArea">
+            <div style="font-size:18px; color:#555;"><i class="fa-solid fa-spinner fa-spin"></i> Loading Data...</div>
         </div>
+        <button onclick="closeDetail()" class="close-btn-bottom">Close</button>
     </div>
+</div>
 
-    <div id="aboutModal" class="modal-overlay">
-        <div class="modal-content">
-            <span class="close-x" onclick="closeAbout()">&times;</span>
-            <div class="modal-header"><i class="fa-solid fa-address-card"></i> About Me</div>
-            <div class="about-title">Shajra Pro <span>➡</span> About me</div>
-            
-            <div class="urdu-text" id="dynamicUrduText">Loading...</div>
-
-            <div class="contact-section">
-                <div class="contact-title-small">📞 Rabta Karein</div>
-                <p class="contact-desc" id="dynamicAboutText">Loading...</p>
-                <div class="phone-display" id="dynamicPhone">...</div>
-                <a id="dynamicWhatsapp" href="#" class="contact-btn btn-whatsapp"><i class="fa-brands fa-whatsapp"></i> WhatsApp Chat</a>
+<div id="analyticsModal" class="shajra-modal-overlay">
+    <div class="shajra-modal-content">
+        <span class="close-x" onclick="closeAnalytics()">&times;</span>
+        <div class="modal-header"><i class="fa-solid fa-chart-simple"></i> Analytics</div>
+        <div class="analytics-stats-grid">
+            <div class="analytics-stat-card" style="grid-column: span 2;">
+                <span class="stat-number" id="statTotal">0</span><span class="stat-urdu">کل افراد</span>
             </div>
-
-            <div class="features-box">
-                <strong>Features:</strong>
-                <ul id="featuresList">
-                </ul>
-            </div>
-
-            <button class="close-btn-bottom" onclick="closeAbout()">Close</button>
+            <div class="analytics-stat-card"><span class="stat-number" id="statMale">--</span><span class="stat-urdu">مرد /</span><span class="stat-urdu">عورت</span></div>
+            <div class="analytics-stat-card"><span class="stat-number" id="statAlive">--</span><span class="stat-urdu">زندہ /</span><span class="stat-urdu">انتقال</span></div>
         </div>
-    </div>
-
-    <script>
-        const supabaseUrl = 'https://ojphjodmpyblyfyinacb.supabase.co';
-        const k1 = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qcGhqb2RtcHlibHlmeWluYWN";
-        const k2 = "iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ0MTUwNTAsImV4cCI6MjA3OTk5MTA1MH0";
-        const k3 = ".mwKu_g5_OT_89KcAeeSsY8IMlnakV2nQVtKRhWWTcDw";
-        const supabaseKey = k1 + k2 + k3;
-        const _supabase = supabase.createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } });
-
-        // MENU LOGIC
-        function toggleMenu() { document.getElementById("myDropdown").classList.toggle("show"); }
-        window.onclick = function(e) { if (!e.target.matches('.nav-btn') && !e.target.matches('.fa-bars')) { var d = document.getElementsByClassName("dropdown-content"); for (var i=0; i<d.length; i++) { if (d[i].classList.contains('show')) d[i].classList.remove('show'); } } }
         
-        // ABOUT LOGIC (Original)
-        function openAbout() { 
-            if(document.getElementById("myDropdown").classList.contains('show')) document.getElementById("myDropdown").classList.remove('show'); 
-            document.getElementById("aboutModal").style.display = "flex"; 
+        <div class="analytics-fun-box">
+            <div style="font-weight:bold; font-size:13px; margin-bottom:8px; color:#1565c0;">Dilchasp Maloomat</div>
+            <div class="fun-item"><span>Sabse Buzurg</span> <span id="statOldest">--</span></div>
+            <div class="fun-item"><span>Sabse Chota</span> <span id="statYoungest">--</span></div>
+            <div class="fun-item" style="border:none;"><span>Zyada Naam</span> <span id="statCommonName">Loading...</span></div>
+        </div>
+        <button onclick="closeAnalytics()" class="close-btn-bottom">Close</button>
+    </div>
+</div>
+
+<div id="aboutModal" class="shajra-modal-overlay">
+    <div class="shajra-modal-content">
+        <span class="close-x" onclick="closeAbout()">&times;</span>
+        <div class="modal-header"><i class="fa-solid fa-address-card"></i> About</div>
+        
+        <div class="about-urdu-text-style" id="dynamicUrduText">Loading...</div>
+        
+        <div class="about-contact-box-style">
+            <div style="color:#d90429; font-weight:700; font-size:18px; margin-bottom:10px; font-family:'Noto Nastaliq Urdu',serif; text-align:center;">
+                <i class="fa-solid fa-headset"></i> رابطہ کریں
+            </div>
+            <p style="font-size:13px; color:#555; text-align:center;" id="dynamicAboutText">Loading...</p>
+            <div class="phone-display-custom" id="dynamicPhone" style="font-size:16px; font-weight:700; margin:10px 0; color:#333;">...</div>
+            <a id="dynamicWhatsapp" href="#" class="contact-whatsapp-btn-style"><i class="fa-brands fa-whatsapp"></i> WhatsApp Chat</a>
+        </div>
+        
+        <div class="features-list-box-style">
+            <strong>App Features:</strong>
+            <ul id="featuresList"></ul>
+        </div>
+        
+        <button class="close-btn-bottom" onclick="closeAbout()">Close</button>
+    </div>
+</div>
+
+<script>
+// Global variable to store all members data
+let allMembersData = []; 
+
+// --- Modal Functions (unchanged) ---
+function toggleMenu(){ document.getElementById("myDropdown").classList.toggle("show"); }
+window.onclick = e => { if(!e.target.matches('.shajra-nav-btn') && !e.target.closest('.shajra-nav-btn')) { document.getElementById("myDropdown").classList.remove('show'); } }
+function openAbout(){ document.getElementById("aboutModal").style.display="flex"; document.getElementById("myDropdown").classList.remove('show'); }
+function closeAbout(){ document.getElementById("aboutModal").style.display="none"; }
+function openAnalytics(){ document.getElementById("analyticsModal").style.display="flex"; calcStats(); }
+function closeAnalytics(){ document.getElementById("analyticsModal").style.display="none"; }
+function closeDetail(){ document.getElementById("detailModal").style.display="none"; }
+
+// --- Detail Modal Logic (UPDATED to use new fields) ---
+async function openMemberDetail(memberId) {
+    const modalContentArea = document.getElementById('modalContentArea');
+    modalContentArea.innerHTML = `<div style="font-size:18px; color:#555; padding-top:10px;"><i class="fa-solid fa-spinner fa-spin"></i> Loading Data for ID: ${memberId}...</div>`;
+    document.getElementById("detailModal").style.display = "flex";
+
+    const data = allMembersData.find(m => m.id == memberId);
+    
+    if (!data) {
+        const { data: fetchedData, error } = await _supabase.from('family_data').select('*').eq('id', memberId).single();
+        if (error || !fetchedData) {
+            console.error("Error loading member detail:", error);
+            modalContentArea.innerHTML = `<div style="color:red; margin:20px 0; text-align:center;">Data load nahi ho saka. ID: ${memberId}. (Supabase connection issue or ID not found)</div>`;
+            return;
         }
-        function closeAbout() { document.getElementById("aboutModal").style.display = "none"; }
-        window.addEventListener("click", function(e) { if(e.target === document.getElementById("aboutModal")) closeAbout(); });
+        renderDetailModal(fetchedData, modalContentArea);
+    } else {
+        renderDetailModal(data, modalContentArea);
+    }
+}
 
-        // ANALYTICS LOGIC
-        function openAnalytics() { 
-            document.getElementById("analyticsModal").style.display = "flex"; 
-            calculateAnalytics();
+function renderDetailModal(data, modalContentArea) {
+    const statusText = data.is_alive ? 'زندہ (Alive)' : 'انتقال کر گئے (Deceased)';
+    const genderText = data.gender ? (data.gender.toLowerCase() === 'm' ? 'مرد (Male)' : 'عورت (Female)') : 'N/A';
+    const dobText = data.dob || 'N/A';
+    const phoneText = data.phone || 'N/A';
+    const relationText = data.relation || 'N/A'; 
+    const imageSrc = data.image_url || 'https://via.placeholder.com/120/fff8e1/a0522d?text=PIC';
+    
+    const modalHtml = `
+        <img src="${imageSrc}" alt="${data.full_name}" class="modal-profile-img">
+        <div class="modal-full-name">${data.full_name}</div>
+        <div class="modal-relation">رشتہ: ${relationText}</div>
+        <div class="detail-data-section" style="margin-top:20px;">
+            <div class="modal-data-row"><span>Status</span><span>${statusText}</span></div>
+            <div class="modal-data-row"><span>Gender</span><span>${genderText}</span></div>
+            <div class="modal-data-row"><span>Date of Birth</span><span>${dobText}</span></div>
+            <div class="modal-data-row"><span>Phone/Contact</span><span>${phoneText}</span></div>
+        </div>
+    `;
+    modalContentArea.innerHTML = modalHtml;
+}
+
+
+// --- Collapse/Expand Logic (unchanged) ---
+window.toggleChildren = function(element, event) {
+    event.stopPropagation();
+    const li = element.closest('li');
+    li.classList.toggle('collapsed');
+    const icon = element.querySelector('i');
+    if (li.classList.contains('collapsed')) {
+        icon.classList.replace('fa-minus', 'fa-plus');
+    } else {
+        icon.classList.replace('fa-plus', 'fa-minus');
+    }
+}
+
+
+// --- Tree Generation Logic (UPDATED to accept rootId) ---
+function createTreeHtml(member){
+    const nameToDisplay = member.full_name || 'نامعلوم';
+    const imageSrc = member.image_url || 'https://via.placeholder.com/60/fff8e1/a0522d?text=PIC';
+    const hasChildren = member.children && member.children.length > 0;
+    
+    let html = `<li id="member-${member.id}">
+                  <div class="member-card-wrapper" onclick="openMemberDetail(${member.id})">
+                      <img src="${imageSrc}" alt="${nameToDisplay}" class="member-img">
+                      <span class="member-info">${nameToDisplay.toUpperCase()}</span>
+                      
+                      ${hasChildren ? 
+                        `<div class="collapse-btn" onclick="toggleChildren(this, event)">
+                            <i class="fa-solid fa-minus"></i>
+                         </div>` 
+                      : ''}
+                  </div>`;
+    
+    if(hasChildren){ 
+        html += "<ul>"; 
+        member.children.forEach(child => html += createTreeHtml(child)); 
+        html += "</ul>"; 
+    }
+    
+    html += "</li>"; 
+    return html;
+}
+
+// NEW FUNCTION: Load only root members for dropdown
+async function loadRootMembers() {
+    const { data, error } = await _supabase.from('family_data').select('id, full_name').is('parent_id', null).order('full_name', { ascending: true });
+
+    const select = document.getElementById('rootMemberSelect');
+    select.innerHTML = '<option value="">-- فیملی کا انتخاب کریں --</option>';
+
+    if (error) {
+        console.error("Error loading root members:", error);
+        return;
+    }
+
+    if (data && data.length > 0) {
+        data.forEach(m => {
+            select.innerHTML += `<option value="${m.id}">${m.full_name}</option>`;
+        });
+        // Automatically select the first root member and load their tree
+        select.value = data[0].id;
+        loadFamilyTree(data[0].id);
+    } else {
+        document.getElementById('visualTreeContainer').innerHTML = `<div style='color:#777; padding:20px;'>فیملی کا کوئی ممبر نہیں ملا۔ ایڈمن پینل سے ممبر شامل کریں۔</div>`; 
+        document.getElementById('currentFamilyName').innerHTML = `<i class="fa-solid fa-sitemap"></i> کوئی ڈیٹا نہیں`;
+    }
+}
+
+// UPDATED FUNCTION: Load tree based on selected rootId and display name
+async function loadFamilyTree(rootId) {
+    const container = document.getElementById('visualTreeContainer');
+    const nameDisplay = document.getElementById('currentFamilyName');
+    
+    if (!rootId) {
+        container.innerHTML = `<div style='color:#777; padding:20px;'>فیملی دیکھنے کے لیے اوپر سے کوئی رُوٹ (بنیادی ممبر) منتخب کریں۔</div>`; 
+        nameDisplay.innerHTML = `<i class="fa-solid fa-sitemap"></i> خاندانی شجرہ`;
+        return;
+    }
+
+    // 1. Get the name of the selected family head
+    const selectedOption = document.getElementById('rootMemberSelect').options[document.getElementById('rootMemberSelect').selectedIndex];
+    const familyName = selectedOption ? selectedOption.text : "نامعلوم فیملی";
+    
+    nameDisplay.innerHTML = `<i class="fa-solid fa-sitemap"></i> ${familyName} فیملی شجرہ`;
+    container.innerHTML = `<div style="color:#999; margin-top:50px;"><i class="fa-solid fa-spinner fa-spin"></i> شجرہ لوڈ ہو رہا ہے...</div>`;
+
+    // 2. Fetch data and build tree
+    const { data, error } = await _supabase.from('family_data').select('*');
+    allMembersData = data || []; 
+
+    if (error) {
+        container.innerHTML = `<div style='color:red; padding:20px;'>Data لوڈ کرنے میں ایرر: ${error.message}</div>`;
+        return;
+    }
+
+    if(!data || data.length === 0){ 
+        container.innerHTML = `<div style='color:#777; padding:20px;'>فیملی کا کوئی ممبر نہیں ملا۔</div>`; 
+        return; 
+    }
+
+    const map = {}; 
+    data.forEach(m => map[m.id] = {...m, children: []});
+    
+    let rootMember = null;
+    
+    data.forEach(m => { 
+        if(m.id == rootId){
+            rootMember = map[m.id];
+        } else if(m.parent_id && map[m.parent_id]){
+            map[m.parent_id].children.push(map[m.id]);
         }
-        function closeAnalytics() { document.getElementById("analyticsModal").style.display = "none"; }
+    });
 
-        // ANALYTICS DATA FETCH
-        async function calculateAnalytics() {
-            const { data, error } = await _supabase.from('family_data').select('*');
-            if(error || !data) return;
+    if(!rootMember) {
+        container.innerHTML = `<div style='color:red; padding:20px;'>منتخب رُوٹ ممبر نہیں ملا۔</div>`;
+        return;
+    }
 
-            document.getElementById('statTotal').innerText = data.length;
+    let treeHtml = "<ul>"; 
+    treeHtml += createTreeHtml(rootMember); 
+    treeHtml += "</ul>";
 
-            if(data.length > 0) {
-                const nameCounts = {};
-                data.forEach(member => {
-                    if(member.full_name) {
-                        const firstName = member.full_name.trim().split(' ')[0]; 
-                        nameCounts[firstName] = (nameCounts[firstName] || 0) + 1;
-                    }
-                });
-                let maxName = "-"; let maxCount = 0;
-                for (const [name, count] of Object.entries(nameCounts)) {
-                    if (count > maxCount) { maxCount = count; maxName = name; }
+    container.innerHTML = treeHtml;
+}
+
+
+// --- Stats and Settings Logic (unchanged) ---
+async function calcStats() {
+    const data = allMembersData.length > 0 ? allMembersData : (await _supabase.from('family_data').select('*')).data;
+    
+    if(data){
+        document.getElementById('statTotal').innerText=data.length;
+        
+        const counts={}; data.forEach(m=>{ if(m.full_name){ const f=m.full_name.trim().split(' ')[0]; counts[f]=(counts[f]||0)+1;}});
+        let maxN="-",maxC=0; for(const[n,c] of Object.entries(counts)){ if(c>maxC){ maxC=c; maxN=n; } }
+        document.getElementById('statCommonName').innerText=`${maxN} (${maxC})`;
+        
+        let m=0,f=0,a=0,d=0; 
+        let oldestDob = '2100-01-01'; 
+        let youngestDob = '1900-01-01'; 
+        let oldestName = 'N/A';
+        let youngestName = 'N/A';
+
+        data.forEach(x=>{ 
+            if(x.gender) { 
+                if(x.gender.toLowerCase().startsWith('m')) m++; else f++; 
+            } 
+            if(x.is_alive!==undefined){ 
+                if(x.is_alive) a++; else d++; 
+            }
+            if(x.dob) {
+                if (x.dob < oldestDob) {
+                    oldestDob = x.dob;
+                    oldestName = x.full_name;
                 }
-                document.getElementById('statCommonName').innerText = `${maxName} (${maxCount})`;
+                if (x.dob > youngestDob) {
+                    youngestDob = x.dob;
+                    youngestName = x.full_name;
+                }
             }
-        }
+        });
 
-        async function loadSiteSettings() { 
-            const { data } = await _supabase.from('site_config').select('*').limit(1); 
-            if (data && data[0]) {
-                document.getElementById('mainTitle').innerText = data[0].site_name || "Family Shajra";
-                document.getElementById('dynamicUrduText').innerText = data[0].about_urdu || "Urdu text...";
-                document.getElementById('dynamicAboutText').innerText = data[0].contact_desc || "Rabta...";
-                document.getElementById('dynamicPhone').innerText = data[0].phone || "000";
-                document.getElementById('dynamicWhatsapp').href = "https://wa.me/" + data[0].whatsapp;
-                
-                const featuresStr = data[0].features || "";
-                const featuresArray = featuresStr.split(',');
-                let listHtml = "";
-                featuresArray.forEach(f => { if(f.trim()!=="") listHtml += `<li>${f.trim()}</li>`; });
-                document.getElementById('featuresList').innerHTML = listHtml;
-            }
-        }
+        document.getElementById('statMale').innerText=`${m} / ${f}`; 
+        document.getElementById('statAlive').innerText=`${a} / ${d}`; 
+        
+        document.getElementById('statOldest').innerText=`${oldestName}`; 
+        document.getElementById('statYoungest').innerText=`${youngestName}`; 
+    }
+}
 
-        window.uploadData = async function() {
-            const name = document.getElementById('nameInput').value; const file = document.getElementById('imageInput').files[0]; const btn = document.getElementById('btn'); const status = document.getElementById('status');
-            if (!name || !file) { alert("Naam aur Image zaroori hai!"); return; }
-            btn.disabled = true; status.innerText = ""; btn.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i>";
-            try {
-                const fileName = Date.now() + "_" + file.name.replace(/\s/g, '');
-                const { error: imgErr } = await _supabase.storage.from('family-images').upload(fileName, file); if (imgErr) throw imgErr;
-                const { data: urlData } = _supabase.storage.from('family-images').getPublicUrl(fileName);
-                const { error: dbErr } = await _supabase.from('family_data').insert([{ full_name: name, image_url: urlData.publicUrl }]); if (dbErr) throw dbErr;
-                alert("Saved!"); location.reload();
-            } catch (err) { alert(err.message); } finally { btn.disabled = false; btn.innerHTML = "<i class='fa-solid fa-plus'></i>"; }
-        }
-        
-        async function loadLastEntry() {
-            const { data } = await _supabase.from('family_data').select('*').order('id', { ascending: false }).limit(1);
-            if (data && data[0]) {
-                document.getElementById('displayArea').style.display = 'block';
-                document.getElementById('savedName').innerText = data[0].full_name;
-                document.getElementById('savedImage').src = data[0].image_url;
-            }
-        }
-        
-        loadSiteSettings(); loadLastEntry();
-    </script>
+async function loadSiteSettings() {
+    const { data } = await _supabase.from('site_config').select('*').limit(1);
+    if(data?.[0]){
+        document.getElementById('mainTitle').innerText=data[0].site_name;
+        document.getElementById('dynamicUrduText').innerText=data[0].about_urdu;
+        document.getElementById('dynamicAboutText').innerText=data[0].contact_desc;
+        document.getElementById('dynamicPhone').innerText=data[0].phone;
+        document.getElementById('dynamicWhatsapp').href = `https://wa.me/${data[0].whatsapp.replace(/[^0-9+]/g, '')}`;
+        document.getElementById('featuresList').innerHTML=(data[0].features||"").split(',').map(f=>`<li>${f}</li>`).join('');
+    }
+}
+
+// ----------------------------------------------------
+// *** DOMContentLoaded: Best Practice Initialization ***
+// ----------------------------------------------------
+document.addEventListener('DOMContentLoaded', () => {
+    loadSiteSettings();
+    loadRootMembers(); 
+});
+</script>
 </body>
 </html>

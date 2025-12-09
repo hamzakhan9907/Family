@@ -40,6 +40,28 @@ header { background-color: #2c3e50; padding:10px 15px; display:flex; justify-con
 .shajra-dropdown-menu i { width:18px; text-align:center; color:#7f8c8d; }
 .show { display:block; }
 
+/* --- Search Bar Styles (New) --- */
+.shajra-search-container {
+    padding: 5px 10px;
+    background-color: #34495e; 
+    border-bottom: 2px solid #2c3e50;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+#memberSearchInput {
+    padding: 5px 10px;
+    border-radius: 6px;
+    border: 1px solid #5d6d7e;
+    font-size: 13px;
+    width: 90%;
+    max-width: 400px;
+    background: #fcfcfc;
+    color: #333;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+
 /* ---------- MODALS (Common Styles) ---------- */
 .shajra-modal-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:1000; justify-content:center; align-items:center; backdrop-filter:blur(2px); }
 .shajra-modal-content { background:white; width:85%; max-width:340px; padding:25px; border-radius:16px; text-align:center; position:relative; max-height:90vh; overflow-y:auto; box-shadow:0 10px 30px rgba(0,0,0,0.2); }
@@ -293,12 +315,12 @@ header { background-color: #2c3e50; padding:10px 15px; display:flex; justify-con
 }
 
 /* ------------------------------------------------------------- */
-/* ---------- FAMILY TREE STYLES (Padding is 150px, Alignment changed) ------------------------------- */
+/* ---------- FAMILY TREE STYLES (Padding Reverted to 10px) ------------------------------- */
 /* ------------------------------------------------------------- */
 .family-tree { 
     font-family: 'Inter', sans-serif; 
     text-align: center; 
-    padding: 30px 30px;
+    padding: 30px 10px; /* REVERTED: Padding changed back to 10px */
     background-color: #fcfbf6; 
     overflow-x: auto; 
     min-height: 400px; 
@@ -309,7 +331,7 @@ header { background-color: #2c3e50; padding:10px 15px; display:flex; justify-con
     list-style: none; 
     padding-left: 0; 
     display: flex; 
-    justify-content: flex-start; /* FIX: Changed from 'center' to 'flex-start' for left-side visibility */
+    justify-content: flex-start; /* FIX: Kept 'flex-start' to prevent left-side cutoff */
     transition: all 0.5s ease-in-out; 
     margin: 0; 
 }
@@ -353,11 +375,16 @@ header { background-color: #2c3e50; padding:10px 15px; display:flex; justify-con
         <div id="myDropdown" class="shajra-dropdown-menu">
             <a href="#"><i class="fa-solid fa-clock-rotate-left"></i> History</a>
             <a href="#"><i class="fa-solid fa-users-line"></i> All Members</a>
-            <a href="#"><i class="fa-solid fa-magnifying-glass"></i> Search</a>
+            <a onclick="toggleSearch()"><i class="fa-solid fa-magnifying-glass"></i> Search</a>
             <a onclick="openAbout()"><i class="fa-solid fa-headset"></i> Contact Us</a>
         </div>
     </div>
 </div>
+
+<div class="shajra-search-container" id="searchContainer" style="display: none;">
+    <input type="text" id="memberSearchInput" onkeyup="filterTree(this.value)" placeholder="🔍 نام سے تلاش کریں..." />
+</div>
+
 
 <div class="heading-container">
     <div class="root-select-container">
@@ -437,17 +464,63 @@ header { background-color: #2c3e50; padding:10px 15px; display:flex; justify-con
 <script>
 // Global variable to store all members data
 let allMembersData = []; 
+let currentRootId = null; // Track the currently loaded root member ID
 
-// --- Modal Functions (unchanged) ---
+// --- Age Calculation Function (NEW) ---
+function calculateAge(dob, dod, isAlive) {
+    if (!dob) return 'N/A';
+
+    const dobDate = new Date(dob);
+    let today = new Date();
+    let endDate = today;
+    let statusText = '(Age:';
+
+    if (!isAlive && dod) {
+        endDate = new Date(dod);
+        statusText = '(Passed away at:';
+    } else if (!isAlive && !dod) {
+        statusText = '(Deceased, Age:';
+    }
+
+    let age = endDate.getFullYear() - dobDate.getFullYear();
+    const monthDifference = endDate.getMonth() - dobDate.getMonth();
+    
+    // Adjust age if birthday hasn't passed yet this year/end date
+    if (monthDifference < 0 || (monthDifference === 0 && endDate.getDate() < dobDate.getDate())) {
+        age--;
+    }
+    
+    if (age < 0) return 'N/A';
+    
+    return `${statusText} ${age} years)`;
+}
+
+
+// --- Modal Functions (unchanged, added toggleSearch) ---
 function toggleMenu(){ document.getElementById("myDropdown").classList.toggle("show"); }
-window.onclick = e => { if(!e.target.matches('.shajra-nav-btn') && !e.target.closest('.shajra-nav-btn')) { document.getElementById("myDropdown").classList.remove('show'); } }
+window.onclick = e => { if(!e.target.matches('.shajra-nav-btn') && !e.target.closest('.shajra-nav-btn') && !e.target.matches('#memberSearchInput')) { document.getElementById("myDropdown").classList.remove('show'); } }
+
+// NEW: Toggle search bar visibility
+function toggleSearch() {
+    const searchContainer = document.getElementById('searchContainer');
+    searchContainer.style.display = searchContainer.style.display === 'none' ? 'flex' : 'none';
+    document.getElementById("myDropdown").classList.remove('show');
+    if (searchContainer.style.display === 'flex') {
+        document.getElementById('memberSearchInput').focus();
+    } else {
+        // Clear search and reload full tree if search is closed
+        document.getElementById('memberSearchInput').value = '';
+        if (currentRootId) loadFamilyTree(currentRootId);
+    }
+}
+
 function openAbout(){ document.getElementById("aboutModal").style.display="flex"; document.getElementById("myDropdown").classList.remove('show'); }
 function closeAbout(){ document.getElementById("aboutModal").style.display="none"; }
 function openAnalytics(){ document.getElementById("analyticsModal").style.display="flex"; calcStats(); }
 function closeAnalytics(){ document.getElementById("analyticsModal").style.display="none"; }
 function closeDetail(){ document.getElementById("detailModal").style.display="none"; }
 
-// --- Detail Modal Logic (UPDATED to use new fields) ---
+// --- Detail Modal Logic (UPDATED to include age) ---
 async function openMemberDetail(memberId) {
     const modalContentArea = document.getElementById('modalContentArea');
     modalContentArea.innerHTML = `<div style="font-size:18px; color:#555; padding-top:10px;"><i class="fa-solid fa-spinner fa-spin"></i> Loading Data for ID: ${memberId}...</div>`;
@@ -476,7 +549,10 @@ function renderDetailModal(data, modalContentArea) {
     const relationText = data.relation || 'N/A'; 
     const imageSrc = data.image_url || 'https://via.placeholder.com/120/fff8e1/a0522d?text=PIC';
     
-    // SPOUSE LOGIC ADDED AGAIN (If it was mistakenly removed in previous iteration)
+    // Calculate Age (NEW)
+    const ageInfo = calculateAge(data.dob, data.dod, data.is_alive);
+
+    // SPOUSE LOGIC
     let spouseName = 'N/A';
     let spouseSource = '';
     if (data.spouse_external_name) {
@@ -501,7 +577,7 @@ function renderDetailModal(data, modalContentArea) {
         <div class="modal-relation">رشتہ: ${relationText}</div>
         <div class="detail-data-section" style="margin-top:20px;">
             <div class="modal-data-row"><span>Status</span><span>${statusText}</span></div>
-            <div class="modal-data-row"><span>Gender</span><span>${genderText}</span></div>
+            <div class="modal-data-row"><span>Age</span><span>${ageInfo}</span></div> <div class="modal-data-row"><span>Gender</span><span>${genderText}</span></div>
             <div class="modal-data-row"><span>Date of Birth</span><span>${dobText}</span></div>
             ${spouseHtml} 
             <div class="modal-data-row"><span>Phone/Contact</span><span>${phoneText}</span></div>
@@ -553,6 +629,61 @@ function createTreeHtml(member){
     return html;
 }
 
+// NEW FUNCTION: Filters the tree based on search input
+function filterTree(searchText) {
+    const text = searchText.toLowerCase().trim();
+    const container = document.getElementById('visualTreeContainer');
+    
+    if (!text || text.length < 2) {
+        // Reload the full tree if search is empty
+        if (currentRootId) loadFamilyTree(currentRootId);
+        return;
+    }
+
+    // Find members matching the search text
+    const matchingMembers = allMembersData.filter(member => 
+        member.full_name && member.full_name.toLowerCase().includes(text)
+    );
+
+    if (matchingMembers.length === 0) {
+        container.innerHTML = `<div style='color:#777; padding:20px;'>کوئی ممبر نہیں ملا جس کا نام "${searchText}" ہو۔</div>`; 
+        return;
+    }
+
+    // Build a temporary tree structure for display
+    let searchTreeHtml = "<ul>";
+    matchingMembers.forEach(member => {
+        const nameToDisplay = member.full_name || 'نامعلوم';
+        const imageSrc = member.image_url || 'https://via.placeholder.com/60/fff8e1/a0522d?text=PIC';
+        
+        // Find the root (or parent) to display the context
+        const parent = allMembersData.find(m => m.id === member.parent_id);
+        const relationInfo = parent ? ` (S/D of ${parent.full_name})` : ' (Root)';
+
+        searchTreeHtml += `
+            <li id="member-search-${member.id}" style="padding: 15px 5px 0 5px;">
+                <div class="member-card-wrapper" onclick="openMemberDetail(${member.id})" style="min-width: 180px;">
+                    <img src="${imageSrc}" alt="${nameToDisplay}" class="member-img" style="width: 40px; height: 40px;">
+                    <span class="member-info" style="font-size: 0.9rem;">${nameToDisplay.toUpperCase()}</span>
+                    <span style="font-size: 0.7rem; color: #496075;">${relationInfo}</span>
+                </div>
+            </li>`;
+    });
+    searchTreeHtml += "</ul>";
+    
+    container.innerHTML = `<div style="text-align: center; margin-bottom: 10px; color: #34495e;">
+        **${matchingMembers.length}** ممبرز ملے: 
+        <i class="fa-solid fa-square-arrow-up-right" style="font-size: 10px; margin-left: 5px; color: #2ecc71;"></i>
+        <a href="#" onclick="loadFamilyTree(currentRootId); document.getElementById('memberSearchInput').value = ''; return false;" style="font-size: 11px; color: #3498db; text-decoration: underline;">
+            Back to Full Tree
+        </a>
+        </div>
+        ${searchTreeHtml}`;
+    // Temporary tree styling to make it look like a list
+    container.querySelector('.family-tree > ul').style.flexWrap = 'wrap'; 
+}
+
+
 // NEW FUNCTION: Load only root members for dropdown
 async function loadRootMembers() {
     const { data, error } = await _supabase.from('family_data').select('id, full_name').is('parent_id', null).order('full_name', { ascending: true });
@@ -582,6 +713,7 @@ async function loadRootMembers() {
 async function loadFamilyTree(rootId) {
     const container = document.getElementById('visualTreeContainer');
     const nameDisplay = document.getElementById('currentFamilyName');
+    currentRootId = rootId; // Store root ID globally
     
     if (!rootId) {
         container.innerHTML = `<div style='color:#777; padding:20px;'>فیملی دیکھنے کے لیے اوپر سے کوئی رُوٹ (بنیادی ممبر) منتخب کریں۔</div>`; 

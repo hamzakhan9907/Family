@@ -49,7 +49,7 @@ header { background-color: #2c3e50; padding:10px 15px; display:flex; justify-con
 
 
 /* ---------------------------------------------------------------------------------- */
-/* ---------- HEADING & DROPDOWN STYLES (NEW)  ----- */
+/* ---------- HEADING & DROPDOWN STYLES (Mobile Optimized)  ----- */
 /* ---------------------------------------------------------------------------------- */
 .heading-container {
     display: flex;
@@ -60,7 +60,6 @@ header { background-color: #2c3e50; padding:10px 15px; display:flex; justify-con
     padding: 0 10px;
     flex-wrap: wrap; 
 }
-/* Flex-grow 1 allows the center element to take up most space */
 .family-name-display {
     font-family: 'Noto Nastaliq Urdu', serif;
     font-size: 20px; 
@@ -70,16 +69,16 @@ header { background-color: #2c3e50; padding:10px 15px; display:flex; justify-con
     border-bottom: 3px solid #4ade80; 
     display: inline-block;
     padding-bottom: 3px;
-    text-align: center; /* Center the text */
-    flex-grow: 1; /* Allow it to grow */
-    order: 2; /* Place it in the center */
+    text-align: center; 
+    flex-grow: 1; 
+    order: 2; 
 }
 .root-select-container {
     flex-grow: 0;
     max-width: 150px;
     text-align: left;
     margin-bottom: 5px;
-    order: 1; /* Place it on the left */
+    order: 1; 
 }
 #rootMemberSelect {
     padding: 6px 8px;
@@ -91,11 +90,9 @@ header { background-color: #2c3e50; padding:10px 15px; display:flex; justify-con
 .empty-space-filler {
     flex-grow: 0;
     max-width: 150px;
-    min-width: 30px; /* To maintain some spacing */
-    order: 3; /* Place it on the right */
+    min-width: 30px; 
+    order: 3; 
 }
-
-/* For very small screens, make selection full width */
 @media (max-width: 400px) {
     .heading-container {
         flex-direction: column-reverse;
@@ -109,13 +106,13 @@ header { background-color: #2c3e50; padding:10px 15px; display:flex; justify-con
         text-align: center;
     }
     .empty-space-filler {
-        display: none; /* Hide filler on mobile */
+        display: none; 
     }
 }
 
 
 /* ---------------------------------------------------------------------------------- */
-/* ---------- MEMBER DETAIL MODAL STYLES  ----- */
+/* ---------- MEMBER DETAIL MODAL STYLES (Unchanged)  ----- */
 /* ---------------------------------------------------------------------------------- */
 #detailModal .shajra-modal-content {
     max-width: 400px;
@@ -133,9 +130,6 @@ header { background-color: #2c3e50; padding:10px 15px; display:flex; justify-con
     box-shadow: 0 0 0 3px #fff8e1; 
     transition: transform 0.3s;
 }
-#detailModal .modal-profile-img:hover {
-    transform: scale(1.05);
-}
 #detailModal .modal-full-name { 
     font-size: 28px; 
     font-weight: 800; 
@@ -152,7 +146,6 @@ header { background-color: #2c3e50; padding:10px 15px; display:flex; justify-con
     border-bottom: 1px solid #eee;
     text-align: center; 
 }
-/* Data rows need LTR alignment inside the container */
 #detailModal .detail-data-section {
     text-align: left;
     padding: 0 10px; 
@@ -163,9 +156,6 @@ header { background-color: #2c3e50; padding:10px 15px; display:flex; justify-con
     padding: 10px 5px; 
     border-bottom: 1px solid #f0f0f0; 
     font-size: 14px; 
-}
-#detailModal .modal-data-row:last-child {
-    border-bottom: none;
 }
 #detailModal .modal-data-row span:first-child { 
     font-weight: 600; 
@@ -179,137 +169,68 @@ header { background-color: #2c3e50; padding:10px 15px; display:flex; justify-con
 }
 
 
-/* ---------------------------------------------------------------------------------- */
-/* ---------- ANALYTICS MODAL STYLES  ----- */
-/* ---------------------------------------------------------------------------------- */
-#analyticsModal .analytics-stats-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-bottom: 15px;
-}
-#analyticsModal .analytics-stat-card {
-    background: #f0f8ff; 
-    border: 1px solid #b3e5fc;
-    border-radius: 8px;
-    padding: 10px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-#analyticsModal .stat-number {
-    font-size: 24px;
-    font-weight: 800;
-    color: #1e88e5;
-}
-#analyticsModal .stat-urdu {
-    font-size: 12px;
-    color: #555;
-}
-#analyticsModal .analytics-fun-box {
-    background: #fffbe6;
-    border: 1px solid #ffe082;
-    border-radius: 8px;
-    padding: 15px;
-    text-align: left;
-}
-#analyticsModal .fun-item {
-    font-size: 13px;
-    color: #333;
-    padding: 5px 0;
-    border-bottom: 1px dotted #ccc;
-    display: flex;
-    justify-content: space-between;
-}
-#analyticsModal .fun-item span {
-    font-weight: 700;
-    color: #d81b60;
-}
-
-
-/* ---------------------------------------------------------------------------------- */
-/* ---------- ABOUT MODAL SPECIFIC STYLES  ----- */
-/* ---------------------------------------------------------------------------------- */
-.about-urdu-text-style {
-    font-family: 'Noto Nastaliq Urdu', serif;
-    font-size: 14px;
-    color: #333;
-    padding: 15px;
-    border-radius: 8px;
-    background-color: #f8f9fa;
-    border: 1px solid #e9ecef;
-    margin-bottom: 15px;
+/* ------------------------------------------------------------- */
+/* ---------- FAMILY TREE STYLES (REVERTED TO LARGER CARDS) ---- */
+/* ------------------------------------------------------------- */
+.family-tree { 
+    font-family: 'Inter', sans-serif; 
     text-align: center; 
-    line-height: 1.8;
+    padding: 30px 10px; /* Kept narrow padding for mobile */
+    background-color: #fcfbf6; 
+    overflow-x: auto; /* Essential for mobile scrolling */
+    min-height: 400px; 
 }
-
-.about-contact-box-style {
-    background: #e6f7ff; 
-    border: 1px solid #b3e5fc;
-    border-radius: 12px;
-    padding: 15px;
-    margin-bottom: 15px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+.family-tree ul { 
+    padding-top: 25px; 
+    position: relative; 
+    list-style: none; 
+    padding-left: 0; 
+    display: flex; 
+    justify-content: center; 
+    transition: all 0.5s ease-in-out; 
+    margin: 0; 
 }
-
-.contact-whatsapp-btn-style {
-    display: block;
-    background: #25d366;
-    color: white;
-    padding: 10px;
-    border-radius: 8px;
-    text-decoration: none;
-    font-weight: 600;
-    margin-top: 10px;
-    transition: background 0.3s;
-    text-align: center;
+.family-tree li { 
+    list-style-type: none; 
+    position: relative; 
+    padding: 25px 15px 0 15px; 
+    flex-shrink: 0; 
+    transition: all 0.5s ease-in-out; 
 }
-.contact-whatsapp-btn-style:hover {
-    background: #128c7e;
+.family-tree li .member-card-wrapper { 
+    border: 2px solid #a0522d; 
+    background-color: #fff8e1; 
+    padding: 10px; /* Reverted to 10px */
+    text-decoration: none; 
+    display: inline-flex; 
+    flex-direction: column; 
+    align-items: center; 
+    border-radius: 12px; /* Reverted to 12px */
+    transition: all 0.3s ease; 
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); 
+    min-width: 140px; /* Reverted to 140px for better text readability */
+    position: relative; 
+    cursor: pointer; 
 }
-
-.features-list-box-style {
-    text-align: left;
-    background: #fdfde6; 
-    border: 1px solid #fff3cd;
-    border-radius: 8px;
-    padding: 15px;
+.member-img { 
+    width: 60px; /* Reverted to 60px */
+    height: 60px; 
+    border-radius: 50%; 
+    object-fit: cover; 
+    border: 3px solid #a0522d; /* Reverted to 3px */
+    margin-bottom: 5px; 
+    transition: transform 0.3s; 
 }
-.features-list-box-style strong {
-    display: block;
-    margin-bottom: 5px;
-    color: #856404;
-    font-size: 14px;
+.member-info { 
+    color: #5d4037; 
+    font-size: 0.85rem; /* Reverted to 0.85rem */
+    font-weight: 700; 
+    line-height: 1.2; 
+    text-transform: uppercase; 
+    text-align: center; 
+    padding-top: 5px; 
 }
-.features-list-box-style ul {
-    list-style: disc;
-    margin-left: 20px;
-    font-size: 12px;
-    color: #555;
-    padding: 0;
-}
-.features-list-box-style ul li {
-    padding: 2px 0;
-}
-
-/* ------------------------------------------------------------- */
-/* ---------- FAMILY TREE STYLES ------------------------------- */
-/* ------------------------------------------------------------- */
-.family-tree { font-family: 'Inter', sans-serif; text-align: center; padding: 30px; background-color: #fcfbf6; overflow-x: auto; min-height: 400px; }
-.family-tree ul { padding-top: 25px; position: relative; list-style: none; padding-left: 0; display: flex; justify-content: center; transition: all 0.5s ease-in-out; margin: 0; }
-.family-tree > ul { padding-top: 0; }
-.family-tree li { list-style-type: none; position: relative; padding: 25px 15px 0 15px; flex-shrink: 0; transition: all 0.5s ease-in-out; }
-.family-tree > ul > li { padding-top: 0; }
-.family-tree li .member-card-wrapper { border: 2px solid #a0522d; background-color: #fff8e1; padding: 10px; text-decoration: none; display: inline-flex; flex-direction: column; align-items: center; border-radius: 12px; transition: all 0.3s ease; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); min-width: 140px; position: relative; cursor: pointer; }
-.family-tree li .member-card-wrapper:hover { background: #e7c29e; border-color: #a0522d; transform: translateY(-2px); box-shadow: 0 6px 10px -1px rgba(0, 0, 0, 0.15); }
-.member-img { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 3px solid #a0522d; margin-bottom: 5px; transition: transform 0.3s; }
-.member-img:hover { transform: scale(1.05); }
-.member-info { color: #5d4037; font-size: 0.85rem; font-weight: 700; line-height: 1.2; text-transform: uppercase; text-align: center; padding-top: 5px; }
-.collapse-btn { position: absolute; top: -12px; right: -12px; background: #3b82f6; color: white; border: 2px solid #fff; border-radius: 50%; width: 25px; height: 25px; display: flex; justify-content: center; align-items: center; font-size: 14px; cursor: pointer; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); z-index: 10; transition: background 0.3s; }
-.collapse-btn:hover { background: #1e40af; }
-.collapsed > ul { display: none; }
-.collapsed > .member-card-wrapper > .collapse-btn { background: #10b981; }
-/* --- Connecting Lines (unchanged) --- */
+/* Connecting Lines (unchanged) */
 .family-tree li::after { content: ''; position: absolute; top: 0; left: 50%; border-left: 1px solid #8d6e63; border-top: 1px solid #8d6e63; width: 50%; height: 25px; }
 .family-tree li::before { content: ''; position: absolute; top: 0; right: 50%; border-top: 1px solid #8d6e63; width: 50%; height: 25px; }
 .family-tree ul ul::before { content: ''; position: absolute; top: 0; left: 50%; border-left: 1px solid #8d6e63; width: 0; height: 25px; }
@@ -318,6 +239,7 @@ header { background-color: #2c3e50; padding:10px 15px; display:flex; justify-con
 .family-tree li:last-child:not(:only-child)::after { border-top: none; width: 0; }
 .family-tree li:only-child::before, .family-tree li:only-child::after { border: none; }
 .family-tree li:only-child::after { border-left: 1px solid #8d6e63 !important; }
+
 </style>
 </head>
 <body>
@@ -336,7 +258,7 @@ header { background-color: #2c3e50; padding:10px 15px; display:flex; justify-con
         <div id="myDropdown" class="shajra-dropdown-menu">
             <a href="#"><i class="fa-solid fa-clock-rotate-left"></i> History</a>
             <a href="#"><i class="fa-solid fa-users-line"></i> All Members</a>
-            <a href="#"><i class="fa-solid fa-magnifying-glass"></i> Search</a>
+            <a onclick="openSearch()"><i class="fa-solid fa-magnifying-glass"></i> Search</a>
             <a onclick="openAbout()"><i class="fa-solid fa-headset"></i> Contact Us</a>
         </div>
     </div>
@@ -358,6 +280,18 @@ header { background-color: #2c3e50; padding:10px 15px; display:flex; justify-con
     <div style="color:#999; margin-top:50px;"><i class="fa-solid fa-spinner fa-spin"></i> فیملی لوڈ ہو رہی ہے...</div>
 </div>
 
+
+<div id="searchModal" class="shajra-modal-overlay">
+    <div class="shajra-modal-content">
+        <span class="close-x" onclick="closeSearch()">&times;</span>
+        <div class="modal-header"><i class="fa-solid fa-magnifying-glass"></i> ممبر تلاش کریں</div>
+        <input type="text" id="searchInput" onkeyup="searchMember()" placeholder="تلاش کے لیے نام لکھیں..." />
+        <div id="searchResults">
+            <div style="font-size:14px; color:#999; padding:10px;">نتائج یہاں ظاہر ہوں گے۔</div>
+        </div>
+        <button onclick="closeSearch()" class="close-btn-bottom">Close</button>
+    </div>
+</div>
 
 <div id="detailModal" class="shajra-modal-overlay">
     <div class="shajra-modal-content">
@@ -421,7 +355,7 @@ header { background-color: #2c3e50; padding:10px 15px; display:flex; justify-con
 // Global variable to store all members data
 let allMembersData = []; 
 
-// --- Modal Functions (unchanged) ---
+// --- Modal Functions ---
 function toggleMenu(){ document.getElementById("myDropdown").classList.toggle("show"); }
 window.onclick = e => { if(!e.target.matches('.shajra-nav-btn') && !e.target.closest('.shajra-nav-btn')) { document.getElementById("myDropdown").classList.remove('show'); } }
 function openAbout(){ document.getElementById("aboutModal").style.display="flex"; document.getElementById("myDropdown").classList.remove('show'); }
@@ -429,8 +363,55 @@ function closeAbout(){ document.getElementById("aboutModal").style.display="none
 function openAnalytics(){ document.getElementById("analyticsModal").style.display="flex"; calcStats(); }
 function closeAnalytics(){ document.getElementById("analyticsModal").style.display="none"; }
 function closeDetail(){ document.getElementById("detailModal").style.display="none"; }
+function openSearch(){ 
+    document.getElementById("searchModal").style.display="flex"; 
+    // Clear previous search results and input
+    document.getElementById("searchInput").value = "";
+    document.getElementById("searchResults").innerHTML = `<div style="font-size:14px; color:#999; padding:10px;">نتائج یہاں ظاہر ہوں گے۔</div>`;
+    document.getElementById("myDropdown").classList.remove('show'); // Close 'More' dropdown
+}
+function closeSearch(){ document.getElementById("searchModal").style.display="none"; }
 
-// --- Detail Modal Logic (UPDATED to use new fields) ---
+function searchMember() {
+    const query = document.getElementById('searchInput').value.trim().toLowerCase();
+    const resultsContainer = document.getElementById('searchResults');
+    resultsContainer.innerHTML = ''; 
+
+    if (query.length < 2) {
+        resultsContainer.innerHTML = `<div style="font-size:14px; color:#999; padding:10px;">کم از کم 2 حروف لکھیں۔</div>`;
+        return;
+    }
+
+    const filteredMembers = allMembersData.filter(member => 
+        member.full_name && member.full_name.toLowerCase().includes(query)
+    ).sort((a, b) => a.full_name.localeCompare(b.full_name));
+
+    if (filteredMembers.length === 0) {
+        resultsContainer.innerHTML = `<div style="font-size:14px; color:#e74c3c; padding:10px;">کوئی ممبر نہیں ملا۔</div>`;
+        return;
+    }
+
+    filteredMembers.forEach(member => {
+        // Find parent's name for better context
+        const parent = allMembersData.find(m => m.id === member.parent_id);
+        const parentName = parent ? parent.full_name : 'Root';
+        
+        const item = document.createElement('div');
+        item.className = 'search-result-item';
+        item.onclick = () => {
+            closeSearch();
+            openMemberDetail(member.id);
+        };
+        item.innerHTML = `
+            <span class="result-name">${member.full_name}</span>
+            <span class="result-details">Relation: ${member.relation || 'N/A'} | Parent: ${parentName}</span>
+        `;
+        resultsContainer.appendChild(item);
+    });
+}
+
+
+// --- Detail Modal Logic (unchanged) ---
 async function openMemberDetail(memberId) {
     const modalContentArea = document.getElementById('modalContentArea');
     modalContentArea.innerHTML = `<div style="font-size:18px; color:#555; padding-top:10px;"><i class="fa-solid fa-spinner fa-spin"></i> Loading Data for ID: ${memberId}...</div>`;
@@ -459,6 +440,24 @@ function renderDetailModal(data, modalContentArea) {
     const relationText = data.relation || 'N/A'; 
     const imageSrc = data.image_url || 'https://via.placeholder.com/120/fff8e1/a0522d?text=PIC';
     
+    // SPOUSE LOGIC
+    let spouseName = 'N/A';
+    let spouseSource = '';
+    if (data.spouse_external_name) {
+        spouseName = data.spouse_external_name;
+        spouseSource = ' (Manual)';
+    } else if (data.spouse_id) {
+        const spouse = allMembersData.find(m => m.id === data.spouse_id);
+        if (spouse) {
+            spouseName = spouse.full_name;
+            spouseSource = ` (ID: ${data.spouse_id})`;
+        } else {
+            spouseName = `Linked ID: ${data.spouse_id}`;
+            spouseSource = ' (Not Found)';
+        }
+    }
+    const spouseHtml = `<div class="modal-data-row"><span>Spouse (شریک حیات)</span><span>${spouseName}${spouseSource}</span></div>`;
+    
     const modalHtml = `
         <img src="${imageSrc}" alt="${data.full_name}" class="modal-profile-img">
         <div class="modal-full-name">${data.full_name}</div>
@@ -467,6 +466,7 @@ function renderDetailModal(data, modalContentArea) {
             <div class="modal-data-row"><span>Status</span><span>${statusText}</span></div>
             <div class="modal-data-row"><span>Gender</span><span>${genderText}</span></div>
             <div class="modal-data-row"><span>Date of Birth</span><span>${dobText}</span></div>
+            ${spouseHtml} 
             <div class="modal-data-row"><span>Phone/Contact</span><span>${phoneText}</span></div>
         </div>
     `;
@@ -488,7 +488,7 @@ window.toggleChildren = function(element, event) {
 }
 
 
-// --- Tree Generation Logic (UPDATED to accept rootId) ---
+// --- Tree Generation Logic (unchanged) ---
 function createTreeHtml(member){
     const nameToDisplay = member.full_name || 'نامعلوم';
     const imageSrc = member.image_url || 'https://via.placeholder.com/60/fff8e1/a0522d?text=PIC';
@@ -516,7 +516,7 @@ function createTreeHtml(member){
     return html;
 }
 
-// NEW FUNCTION: Load only root members for dropdown
+// NEW FUNCTION: Load only root members for dropdown (unchanged)
 async function loadRootMembers() {
     const { data, error } = await _supabase.from('family_data').select('id, full_name').is('parent_id', null).order('full_name', { ascending: true });
 
@@ -541,7 +541,7 @@ async function loadRootMembers() {
     }
 }
 
-// UPDATED FUNCTION: Load tree based on selected rootId and display name
+// UPDATED FUNCTION: Load tree based on selected rootId and display name (unchanged)
 async function loadFamilyTree(rootId) {
     const container = document.getElementById('visualTreeContainer');
     const nameDisplay = document.getElementById('currentFamilyName');

@@ -40,7 +40,7 @@ header { background-color: #2c3e50; padding:10px 15px; display:flex; justify-con
 .shajra-dropdown-menu i { width:18px; text-align:center; color:#7f8c8d; }
 .show { display:block; }
 
-/* --- Search Bar Styles (New) --- */
+/* --- Search Bar Styles (UPDATED) --- */
 .shajra-search-container {
     padding: 5px 10px;
     background-color: #34495e; 
@@ -48,6 +48,7 @@ header { background-color: #2c3e50; padding:10px 15px; display:flex; justify-con
     display: flex;
     justify-content: center;
     align-items: center;
+    gap: 8px; /* Added gap between input and button */
 }
 #memberSearchInput {
     padding: 5px 10px;
@@ -60,18 +61,325 @@ header { background-color: #2c3e50; padding:10px 15px; display:flex; justify-con
     color: #333;
     box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
 }
-
-
-/* ---------- MODALS (Common Styles) ---------- */
-.shajra-modal-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:1000; justify-content:center; align-items:center; backdrop-filter:blur(2px); }
-.shajra-modal-content { background:white; width:85%; max-width:340px; padding:25px; border-radius:16px; text-align:center; position:relative; max-height:90vh; overflow-y:auto; box-shadow:0 10px 30px rgba(0,0,0,0.2); }
-.modal-header { font-size:20px; font-weight:700; color:#333; margin-bottom:15px; border-bottom:3px solid #3ecf8e; display:inline-block; padding-bottom:5px; }
-.close-x { position:absolute; top:15px; right:20px; font-size:24px; color:#aaa; cursor:pointer; transition:0.2s; }
-.close-btn-bottom { background:#f1f2f6; border:none; padding:12px 0; width:100%; border-radius:10px; font-weight:bold; color:#555; cursor:pointer; margin-top:10px; }
+/* NEW: Close Button Style */
+.search-close-btn {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1; /* Ensures icon is centered */
+    transition: background 0.2s;
+}
+.search-close-btn:hover {
+    background: #c0392b;
+}
 
 
 /* ---------------------------------------------------------------------------------- */
-/* ---------- HEADING & DROPDOWN STYLES (NEW)  ----- */
+/* ---------- MODALS (Unique Common Styles) ---------- */
+/* ---------------------------------------------------------------------------------- */
+.shajra-modal-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:1000; justify-content:center; align-items:center; backdrop-filter:blur(2px); }
+/* Default small modal size for Stats/About */
+.shajra-modal-content { background:white; width:85%; max-width:340px; padding:25px; border-radius:16px; text-align:center; position:relative; max-height:90vh; overflow-y:auto; box-shadow:0 10px 30px rgba(0,0,0,0.2); }
+/* UNIQUE CLASS FOR HEADER */
+.shajra-modal-title { font-size:20px; font-weight:700; color:#333; margin-bottom:15px; border-bottom:3px solid #3ecf8e; display:inline-block; padding-bottom:5px; }
+/* UNIQUE CLASS FOR CLOSE X */
+.shajra-modal-close-x { position:absolute; top:15px; right:20px; font-size:24px; color:#aaa; cursor:pointer; transition:0.2s; }
+/* UNIQUE CLASS FOR BOTTOM BUTTON */
+.shajra-modal-action-btn { background:#f1f2f6; border:none; padding:12px 0; width:100%; border-radius:10px; font-weight:bold; color:#555; cursor:pointer; margin-top:10px; transition: background 0.2s; }
+.shajra-modal-action-btn:hover { background: #e0e0e0; }
+
+
+/* ---------------------------------------------------------------------------------- */
+/* ---------- ANALYTICS MODAL SPECIFIC STYLES ----- */
+/* ---------------------------------------------------------------------------------- */
+.analytics-stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+.analytics-stat-card {
+    background: #eaf6ff;
+    padding: 10px;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.stat-number {
+    display: block;
+    font-size: 24px;
+    font-weight: 800;
+    color: #1e88e5;
+    line-height: 1;
+}
+.stat-urdu {
+    display: block;
+    font-size: 11px;
+    color: #555;
+    font-family: 'Noto Nastaliq Urdu', serif;
+    margin-top: 3px;
+    font-weight: 500;
+}
+.analytics-fun-box {
+    background: #f7f9fc;
+    border: 1px solid #e0e0e0;
+    padding: 15px;
+    border-radius: 10px;
+    text-align: left;
+    margin-bottom: 20px;
+}
+.fun-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 0;
+    font-size: 14px;
+    color: #444;
+    border-bottom: 1px dashed #eee;
+}
+.fun-item:last-child { border-bottom: none !important; }
+.fun-item span:first-child { font-weight: 500; }
+.fun-item span:last-child { font-weight: 700; color: #388e3c; }
+
+
+/* ---------------------------------------------------------------------------------- */
+/* ---------- ABOUT MODAL SPECIFIC STYLES ----- */
+/* ---------------------------------------------------------------------------------- */
+.about-urdu-text-style {
+    font-family: 'Noto Nastaliq Urdu', serif;
+    font-size: 16px;
+    line-height: 1.8;
+    color: #333;
+    margin-bottom: 20px;
+    /* FIX: Center the Urdu text */
+    text-align: center; 
+}
+.about-contact-box-style {
+    background: #fff3e0;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+}
+.contact-whatsapp-btn-style {
+    display: block;
+    background: #25d366;
+    color: white;
+    padding: 10px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    margin-top: 15px;
+    transition: background 0.3s;
+    font-size: 14px;
+}
+.contact-whatsapp-btn-style:hover {
+    background: #128c7e;
+}
+.features-list-box-style {
+    text-align: left;
+    background: #e8f5e9;
+    padding: 15px;
+    border-radius: 10px;
+    margin-top: 20px;
+}
+.features-list-box-style ul {
+    list-style: disc;
+    padding-left: 20px;
+    margin-top: 5px;
+}
+.features-list-box-style li {
+    font-size: 13px;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+
+/* ---------------------------------------------------------------------------------- */
+/* ---------- ALL MEMBERS MODAL SPECIFIC STYLES ----- */
+/* ---------------------------------------------------------------------------------- */
+/* Overrides default size for large modal */
+#allMembersModal .shajra-modal-content {
+    max-width: 90%; 
+    width: 700px; 
+    padding: 15px;
+}
+.all-members-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+.all-members-table th {
+    background-color: #34495e;
+    color: white;
+    padding: 10px 8px;
+    text-align: left;
+    cursor: pointer;
+    position: sticky; /* Keep header visible on scroll */
+    top: 0;
+    z-index: 50;
+}
+.all-members-table td {
+    padding: 8px;
+    border-bottom: 1px solid #eee;
+    vertical-align: middle;
+}
+.all-members-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+.all-members-table tr:hover {
+    background-color: #f0f7ff;
+}
+.sortable {
+    user-select: none;
+    cursor: pointer;
+    position: relative;
+}
+/* Sort icon styles */
+.sortable::after {
+    content: '\f0dc'; /* Font Awesome: up/down arrows */
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    margin-left: 5px;
+    color: #bdc3c7;
+    font-size: 10px;
+}
+.sortable.asc::after {
+    content: '\f0de'; /* Arrow up */
+    color: #4ade80;
+}
+.sortable.desc::after {
+    content: '\f0dd'; /* Arrow down */
+    color: #e74c3c;
+}
+.details-link {
+    background: #3498db;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 11px;
+    font-weight: 600;
+    transition: background 0.2s;
+}
+.details-link:hover {
+    background: #2980b9;
+}
+
+
+/* ---------------------------------------------------------------------------------- */
+/* ---------- EVENTS MODAL SPECIFIC STYLES (NEW) ----- */
+/* ---------------------------------------------------------------------------------- */
+#eventsModal .shajra-modal-content { max-width: 90%; width: 500px; padding: 15px; }
+.event-tab-btn {
+    padding: 8px 15px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    background: #ecf0f1;
+    color: #555;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background 0.2s, color 0.2s;
+}
+.event-tab-btn:hover {
+    background: #bdc3c7;
+}
+.event-tab-btn.active-tab {
+    background: #3498db;
+    color: white;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+.event-list-container {
+    max-height: 50vh;
+    overflow-y: auto;
+    padding: 5px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    background: #fcfcfc;
+}
+.event-card {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    margin-bottom: 8px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    background: #ffffff;
+    border-left: 5px solid #2ecc71; /* Default: Upcoming/Success */
+}
+.event-card.past {
+    border-left: 5px solid #95a5a6; /* Grey for past events */
+}
+.event-icon {
+    font-size: 24px;
+    color: #3498db;
+    margin-right: 15px;
+    width: 30px;
+    text-align: center;
+}
+.event-details {
+    flex-grow: 1;
+    text-align: left;
+}
+.event-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #333;
+    line-height: 1.2;
+}
+.event-date {
+    font-size: 12px;
+    color: #7f8c8d;
+    margin-top: 3px;
+}
+.event-days {
+    font-size: 12px;
+    font-weight: 600;
+    color: #e67e22;
+    margin-left: 10px;
+}
+
+
+/* ---------------------------------------------------------------------------------- */
+/* ---------- MEMBER DETAIL MODAL STYLES (Existing) ----- */
+/* ---------------------------------------------------------------------------------- */
+#detailModal .shajra-modal-content { max-width: 400px; }
+#detailModal #modalContentArea { text-align: center; }
+/* Applied to image, or to the new icon placeholder div */
+#detailModal .modal-profile-img, #detailModal .modal-profile-icon { 
+    width: 120px; 
+    height: 120px; 
+    border-radius: 50%; 
+    object-fit: cover; 
+    margin: 0 auto 15px auto; 
+    border: 5px solid #a0522d; 
+    box-shadow: 0 0 0 3px #fff8e1; 
+    transition: transform 0.3s; 
+    cursor: pointer; /* Keep hover effect on icon too */
+}
+#detailModal .modal-profile-img:hover, #detailModal .modal-profile-icon:hover { transform: scale(1.05); }
+/* Additional style for the icon background */
+#detailModal .modal-profile-icon {
+    background-color: #f7f7f7;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+/* ... (Other detail modal styles are retained) ... */
+#detailModal .modal-full-name { font-size: 28px; font-weight: 800; color: #2c3e50; margin-bottom: 5px; text-transform: capitalize; text-align: center; }
+#detailModal .modal-relation { font-size: 14px; color: #888; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #eee; text-align: center; }
+#detailModal .detail-data-section { text-align: left; padding: 0 10px; }
+#detailModal .modal-data-row { display: flex; justify-content: space-between; padding: 10px 5px; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
+#detailModal .modal-data-row:last-child { border-bottom: none; }
+#detailModal .modal-data-row span:first-child { font-weight: 600; color: #555; text-align: right; }
+#detailModal .modal-data-row span:last-child { color: #222; font-weight: 700; text-align: left; }
+
+
+/* ---------------------------------------------------------------------------------- */
+/* ---------- HEADING & DROPDOWN STYLES (Horizontal Toggle)  ----- */
 /* ---------------------------------------------------------------------------------- */
 .heading-container {
     display: flex;
@@ -82,7 +390,6 @@ header { background-color: #2c3e50; padding:10px 15px; display:flex; justify-con
     padding: 0 10px;
     flex-wrap: wrap; 
 }
-/* Flex-grow 1 allows the center element to take up most space */
 .family-name-display {
     font-family: 'Noto Nastaliq Urdu', serif;
     font-size: 20px; 
@@ -92,16 +399,16 @@ header { background-color: #2c3e50; padding:10px 15px; display:flex; justify-con
     border-bottom: 3px solid #4ade80; 
     display: inline-block;
     padding-bottom: 3px;
-    text-align: center; /* Center the text */
-    flex-grow: 1; /* Allow it to grow */
-    order: 2; /* Place it in the center */
+    text-align: center; 
+    flex-grow: 1; 
+    order: 2; 
 }
 .root-select-container {
     flex-grow: 0;
     max-width: 150px;
     text-align: left;
     margin-bottom: 5px;
-    order: 1; /* Place it on the left */
+    order: 1; 
 }
 #rootMemberSelect {
     padding: 6px 8px;
@@ -110,217 +417,63 @@ header { background-color: #2c3e50; padding:10px 15px; display:flex; justify-con
     font-size: 12px;
     width: 100%;
 }
-.empty-space-filler {
+.shajra-view-toggle-container {
     flex-grow: 0;
     max-width: 150px;
-    min-width: 30px; /* To maintain some spacing */
-    order: 3; /* Place it on the right */
+    min-width: 30px; 
+    order: 3; 
+    text-align: right;
+}
+#toggleViewBtn {
+    background: #3498db;
+    color: white;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    transition: background 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+    float: right; 
+}
+#toggleViewBtn:hover {
+    background: #2980b9;
 }
 
-/* For very small screens, make selection full width */
-@media (max-width: 400px) {
+/* For very small screens, adjust layout */
+@media (max-width: 500px) {
     .heading-container {
-        flex-direction: column-reverse;
+        flex-direction: column;
         align-items: stretch;
     }
-    .root-select-container {
+    .root-select-container, .shajra-view-toggle-container {
         max-width: 100%;
         margin-bottom: 10px;
+        order: 1; 
     }
     .family-name-display {
         text-align: center;
+        order: 3; 
+        margin-top: 5px;
     }
-    .empty-space-filler {
-        display: none; /* Hide filler on mobile */
+    #toggleViewBtn {
+        float: none;
+        width: 100%;
+        justify-content: center;
     }
-}
-
-
-/* ---------------------------------------------------------------------------------- */
-/* ---------- MEMBER DETAIL MODAL STYLES  ----- */
-/* ---------------------------------------------------------------------------------- */
-#detailModal .shajra-modal-content {
-    max-width: 400px;
-}
-#detailModal #modalContentArea {
-    text-align: center;
-}
-#detailModal .modal-profile-img { 
-    width: 120px; 
-    height: 120px; 
-    border-radius: 50%; 
-    object-fit: cover; 
-    margin: 0 auto 15px auto; 
-    border: 5px solid #a0522d; 
-    box-shadow: 0 0 0 3px #fff8e1; 
-    transition: transform 0.3s;
-}
-#detailModal .modal-profile-img:hover {
-    transform: scale(1.05);
-}
-#detailModal .modal-full-name { 
-    font-size: 28px; 
-    font-weight: 800; 
-    color: #2c3e50; 
-    margin-bottom: 5px; 
-    text-transform: capitalize;
-    text-align: center; 
-}
-#detailModal .modal-relation {
-    font-size: 14px;
-    color: #888;
-    margin-bottom: 15px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #eee;
-    text-align: center; 
-}
-/* Data rows need LTR alignment inside the container */
-#detailModal .detail-data-section {
-    text-align: left;
-    padding: 0 10px; 
-}
-#detailModal .modal-data-row { 
-    display: flex; 
-    justify-content: space-between; 
-    padding: 10px 5px; 
-    border-bottom: 1px solid #f0f0f0; 
-    font-size: 14px; 
-}
-#detailModal .modal-data-row:last-child {
-    border-bottom: none;
-}
-#detailModal .modal-data-row span:first-child { 
-    font-weight: 600; 
-    color: #555; 
-    text-align: right; 
-}
-#detailModal .modal-data-row span:last-child { 
-    color: #222; 
-    font-weight: 700;
-    text-align: left; 
-}
-
-
-/* ---------------------------------------------------------------------------------- */
-/* ---------- ANALYTICS MODAL STYLES  ----- */
-/* ---------------------------------------------------------------------------------- */
-#analyticsModal .analytics-stats-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-bottom: 15px;
-}
-#analyticsModal .analytics-stat-card {
-    background: #f0f8ff; 
-    border: 1px solid #b3e5fc;
-    border-radius: 8px;
-    padding: 10px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-#analyticsModal .stat-number {
-    font-size: 24px;
-    font-weight: 800;
-    color: #1e88e5;
-}
-#analyticsModal .stat-urdu {
-    font-size: 12px;
-    color: #555;
-}
-#analyticsModal .analytics-fun-box {
-    background: #fffbe6;
-    border: 1px solid #ffe082;
-    border-radius: 8px;
-    padding: 15px;
-    text-align: left;
-}
-#analyticsModal .fun-item {
-    font-size: 13px;
-    color: #333;
-    padding: 5px 0;
-    border-bottom: 1px dotted #ccc;
-    display: flex;
-    justify-content: space-between;
-}
-#analyticsModal .fun-item span {
-    font-weight: 700;
-    color: #d81b60;
-}
-
-
-/* ---------------------------------------------------------------------------------- */
-/* ---------- ABOUT MODAL SPECIFIC STYLES  ----- */
-/* ---------------------------------------------------------------------------------- */
-.about-urdu-text-style {
-    font-family: 'Noto Nastaliq Urdu', serif;
-    font-size: 14px;
-    color: #333;
-    padding: 15px;
-    border-radius: 8px;
-    background-color: #f8f9fa;
-    border: 1px solid #e9ecef;
-    margin-bottom: 15px;
-    text-align: center; 
-    line-height: 1.8;
-}
-
-.about-contact-box-style {
-    background: #e6f7ff; 
-    border: 1px solid #b3e5fc;
-    border-radius: 12px;
-    padding: 15px;
-    margin-bottom: 15px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-
-.contact-whatsapp-btn-style {
-    display: block;
-    background: #25d366;
-    color: white;
-    padding: 10px;
-    border-radius: 8px;
-    text-decoration: none;
-    font-weight: 600;
-    margin-top: 10px;
-    transition: background 0.3s;
-    text-align: center;
-}
-.contact-whatsapp-btn-style:hover {
-    background: #128c7e;
-}
-
-.features-list-box-style {
-    text-align: left;
-    background: #fdfde6; 
-    border: 1px solid #fff3cd;
-    border-radius: 8px;
-    padding: 15px;
-}
-.features-list-box-style strong {
-    display: block;
-    margin-bottom: 5px;
-    color: #856404;
-    font-size: 14px;
-}
-.features-list-box-style ul {
-    list-style: disc;
-    margin-left: 20px;
-    font-size: 12px;
-    color: #555;
-    padding: 0;
-}
-.features-list-box-style ul li {
-    padding: 2px 0;
 }
 
 /* ------------------------------------------------------------- */
-/* ---------- FAMILY TREE STYLES (Padding Reverted to 10px) ------------------------------- */
+/* ---------- FAMILY TREE STYLES (Vertical Default) ------------------------------- */
 /* ------------------------------------------------------------- */
 .family-tree { 
     font-family: 'Inter', sans-serif; 
     text-align: center; 
-    padding: 30px 10px; /* REVERTED: Padding changed back to 10px */
+    padding: 30px 10px; 
     background-color: #fcfbf6; 
     overflow-x: auto; 
     min-height: 400px; 
@@ -331,24 +484,41 @@ header { background-color: #2c3e50; padding:10px 15px; display:flex; justify-con
     list-style: none; 
     padding-left: 0; 
     display: flex; 
-    justify-content: flex-start; /* FIX: Kept 'flex-start' to prevent left-side cutoff */
+    justify-content: flex-start; 
     transition: all 0.5s ease-in-out; 
     margin: 0; 
 }
+/* Standard Vertical Tree Connectors (Unchanged) */
 .family-tree > ul { padding-top: 0; }
 .family-tree li { list-style-type: none; position: relative; padding: 25px 15px 0 15px; flex-shrink: 0; transition: all 0.5s ease-in-out; }
 .family-tree > ul > li { padding-top: 0; }
 .family-tree li .member-card-wrapper { border: 2px solid #a0522d; background-color: #fff8e1; padding: 10px; text-decoration: none; display: inline-flex; flex-direction: column; align-items: center; border-radius: 12px; transition: all 0.3s ease; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); min-width: 140px; position: relative; cursor: pointer; }
 .family-tree li .member-card-wrapper:hover { background: #e7c29e; border-color: #a0522d; transform: translateY(-2px); box-shadow: 0 6px 10px -1px rgba(0, 0, 0, 0.15); }
+/* Custom style for icon placeholder */
+.member-img-placeholder {
+    width: 60px; 
+    height: 60px; 
+    border-radius: 50%; 
+    object-fit: cover; 
+    border: 3px solid #a0522d; 
+    margin-bottom: 5px; 
+    transition: transform 0.3s;
+    background: #fff8e1; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center;
+}
+/* Existing image style */
 .member-img { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 3px solid #a0522d; margin-bottom: 5px; transition: transform 0.3s; }
-.member-img:hover { transform: scale(1.05); }
+
+.member-img:hover, .member-img-placeholder:hover { transform: scale(1.05); }
+
 .member-info { color: #5d4037; font-size: 0.85rem; font-weight: 700; line-height: 1.2; text-transform: uppercase; text-align: center; padding-top: 5px; }
-/* Collapse Button (Already on top right corner) */
 .collapse-btn { position: absolute; top: -12px; right: -12px; background: #3b82f6; color: white; border: 2px solid #fff; border-radius: 50%; width: 25px; height: 25px; display: flex; justify-content: center; align-items: center; font-size: 14px; cursor: pointer; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); z-index: 10; transition: background 0.3s; }
 .collapse-btn:hover { background: #1e40af; }
 .collapsed > ul { display: none; }
 .collapsed > .member-card-wrapper > .collapse-btn { background: #10b981; }
-/* --- Connecting Lines (unchanged) --- */
+/* Connectors */
 .family-tree li::after { content: ''; position: absolute; top: 0; left: 50%; border-left: 1px solid #8d6e63; border-top: 1px solid #8d6e63; width: 50%; height: 25px; }
 .family-tree li::before { content: ''; position: absolute; top: 0; right: 50%; border-top: 1px solid #8d6e63; width: 50%; height: 25px; }
 .family-tree ul ul::before { content: ''; position: absolute; top: 0; left: 50%; border-left: 1px solid #8d6e63; width: 0; height: 25px; }
@@ -357,6 +527,79 @@ header { background-color: #2c3e50; padding:10px 15px; display:flex; justify-con
 .family-tree li:last-child:not(:only-child)::after { border-top: none; width: 0; }
 .family-tree li:only-child::before, .family-tree li:only-child::after { border: none; }
 .family-tree li:only-child::after { border-left: 1px solid #8d6e63 !important; }
+
+
+/* ------------------------------------------------------------- */
+/* ---------- SHAHJRA HORIZONTAL TREE STYLES (Unique Classes) ------------------------------- */
+/* ------------------------------------------------------------- */
+.shajra-horizontal-tree {
+    /* Main container needs extra vertical space for layout */
+    padding: 50px 10px; 
+}
+.shajra-horizontal-tree > ul { 
+    /* Root UL: Change flow to vertical stack */
+    flex-direction: column; 
+    align-items: flex-start;
+    padding-top: 0;
+}
+.shajra-horizontal-tree li {
+    /* Individual LI: Creates space for horizontal connection lines */
+    padding: 20px 0 20px 80px; 
+    text-align: left;
+    /* Reset vertical connectors */
+    height: auto !important; 
+}
+.shajra-horizontal-tree ul ul {
+    /* Children UL: Stack children vertically, add vertical connector line */
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    position: relative;
+    padding-left: 40px; 
+    border-left: 1px solid #8d6e63; /* Vertical line from parent generation to children */
+    margin: 0;
+    transition: none; /* Disable transition on UL to prevent odd rotation */
+}
+/* Clear standard vertical connectors */
+.shajra-horizontal-tree li::after, 
+.shajra-horizontal-tree li::before, 
+.shajra-horizontal-tree ul ul::before {
+    content: none !important; 
+    border: none !important;
+}
+/* Horizontal line from the vertical line to the member card (li::before) */
+.shajra-horizontal-tree li::before { 
+    content: '';
+    position: absolute;
+    top: 50%; 
+    left: 0; 
+    border-top: 1px solid #8d6e63;
+    width: 40px; 
+    height: 0;
+    transform: translateY(-50%);
+}
+/* Horizontal line segment 2 (from line to card) (li::after) */
+.shajra-horizontal-tree li::after { 
+    content: '';
+    position: absolute;
+    top: 50%; 
+    left: 40px; 
+    border-top: 1px solid #8d6e63;
+    width: 40px; 
+    height: 0;
+    transform: translateY(-50%);
+}
+/* Root node has no incoming lines */
+.shajra-horizontal-tree > ul > li::before,
+.shajra-horizontal-tree > ul > li::after {
+    content: none !important; 
+}
+/* Reposition collapse button */
+.shajra-horizontal-tree .collapse-btn {
+    top: 50%;
+    right: -25px; 
+    transform: translateY(-50%);
+}
 </style>
 </head>
 <body>
@@ -373,8 +616,8 @@ header { background-color: #2c3e50; padding:10px 15px; display:flex; justify-con
     <div class="shajra-dropdown">
         <button onclick="toggleMenu()" class="shajra-nav-btn"><i class="fa-solid fa-bars-staggered"></i> More</button>
         <div id="myDropdown" class="shajra-dropdown-menu">
-            <a href="#"><i class="fa-solid fa-clock-rotate-left"></i> History</a>
-            <a href="#"><i class="fa-solid fa-users-line"></i> All Members</a>
+            <a onclick="openEvents()"><i class="fa-solid fa-calendar-check"></i> Events & Reminders</a> 
+            <a onclick="openAllMembersList()"><i class="fa-solid fa-users-line"></i> All Members</a> 
             <a onclick="toggleSearch()"><i class="fa-solid fa-magnifying-glass"></i> Search</a>
             <a onclick="openAbout()"><i class="fa-solid fa-headset"></i> Contact Us</a>
         </div>
@@ -383,6 +626,9 @@ header { background-color: #2c3e50; padding:10px 15px; display:flex; justify-con
 
 <div class="shajra-search-container" id="searchContainer" style="display: none;">
     <input type="text" id="memberSearchInput" onkeyup="filterTree(this.value)" placeholder="🔍 نام سے تلاش کریں..." />
+    <button class="search-close-btn" onclick="toggleSearch(true)">
+        <i class="fa-solid fa-xmark"></i>
+    </button>
 </div>
 
 
@@ -395,7 +641,12 @@ header { background-color: #2c3e50; padding:10px 15px; display:flex; justify-con
     <span class="family-name-display" id="currentFamilyName">
         <i class="fa-solid fa-sitemap"></i> خاندانی شجرہ
     </span>
-    <div class="empty-space-filler"></div> </div>
+    <div class="shajra-view-toggle-container">
+        <button id="toggleViewBtn" onclick="toggleTreeView()">
+             <i class="fa-solid fa-arrows-left-right"></i> Horizontal View
+        </button>
+    </div>
+</div>
 
 
 <div class="family-tree" id="visualTreeContainer">
@@ -405,19 +656,19 @@ header { background-color: #2c3e50; padding:10px 15px; display:flex; justify-con
 
 <div id="detailModal" class="shajra-modal-overlay">
     <div class="shajra-modal-content">
-        <span class="close-x" onclick="closeDetail()">&times;</span>
-        <div class="modal-header"><i class="fa-solid fa-user-circle"></i> ممبر تفصیل</div>
+        <span class="shajra-modal-close-x" onclick="closeDetail()">&times;</span>
+        <div class="shajra-modal-title"><i class="fa-solid fa-user-circle"></i> ممبر تفصیل</div>
         <div id="modalContentArea">
             <div style="font-size:18px; color:#555;"><i class="fa-solid fa-spinner fa-spin"></i> Loading Data...</div>
         </div>
-        <button onclick="closeDetail()" class="close-btn-bottom">Close</button>
+        <button onclick="closeDetail()" class="shajra-modal-action-btn">Close</button>
     </div>
 </div>
 
 <div id="analyticsModal" class="shajra-modal-overlay">
     <div class="shajra-modal-content">
-        <span class="close-x" onclick="closeAnalytics()">&times;</span>
-        <div class="modal-header"><i class="fa-solid fa-chart-simple"></i> Analytics</div>
+        <span class="shajra-modal-close-x" onclick="closeAnalytics()">&times;</span>
+        <div class="shajra-modal-title"><i class="fa-solid fa-chart-simple"></i> Analytics</div>
         <div class="analytics-stats-grid">
             <div class="analytics-stat-card" style="grid-column: span 2;">
                 <span class="stat-number" id="statTotal">0</span><span class="stat-urdu">کل افراد</span>
@@ -432,14 +683,14 @@ header { background-color: #2c3e50; padding:10px 15px; display:flex; justify-con
             <div class="fun-item"><span>Sabse Chota</span> <span id="statYoungest">--</span></div>
             <div class="fun-item" style="border:none;"><span>Zyada Naam</span> <span id="statCommonName">Loading...</span></div>
         </div>
-        <button onclick="closeAnalytics()" class="close-btn-bottom">Close</button>
+        <button onclick="closeAnalytics()" class="shajra-modal-action-btn">Close</button>
     </div>
 </div>
 
 <div id="aboutModal" class="shajra-modal-overlay">
     <div class="shajra-modal-content">
-        <span class="close-x" onclick="closeAbout()">&times;</span>
-        <div class="modal-header"><i class="fa-solid fa-address-card"></i> About</div>
+        <span class="shajra-modal-close-x" onclick="closeAbout()">&times;</span>
+        <div class="shajra-modal-title"><i class="fa-solid fa-address-card"></i> About</div>
         
         <div class="about-urdu-text-style" id="dynamicUrduText">Loading...</div>
         
@@ -457,16 +708,75 @@ header { background-color: #2c3e50; padding:10px 15px; display:flex; justify-con
             <ul id="featuresList"></ul>
         </div>
         
-        <button class="close-btn-bottom" onclick="closeAbout()">Close</button>
+        <button class="shajra-modal-action-btn" onclick="closeAbout()">Close</button>
     </div>
 </div>
+
+<div id="allMembersModal" class="shajra-modal-overlay">
+    <div class="shajra-modal-content" style="max-width: 90%; width: 700px; padding: 15px;">
+        <span class="shajra-modal-close-x" onclick="closeAllMembersList()">&times;</span>
+        <div class="shajra-modal-title" style="margin-bottom: 5px;"><i class="fa-solid fa-list"></i> All Members List</div>
+        
+        <div class="all-members-controls">
+            <input type="text" id="memberListSearch" onkeyup="filterMemberList()" placeholder="🔍 Search Name, Status, or Gender..." style="width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px;">
+        </div>
+
+        <div id="memberListTableContainer" style="max-height: 70vh; overflow-y: auto; text-align: left;">
+            <table class="all-members-table">
+                <thead>
+                    <tr id="memberListHeader">
+                        <th data-sort="full_name" class="sortable">Name</th>
+                        <th data-sort="gender" class="sortable">Gender</th>
+                        <th data-sort="is_alive" class="sortable">Status</th>
+                        <th data-sort="dob" class="sortable">Age</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody id="memberListBody">
+                    <tr><td colspan="5" style="text-align:center;">Loading all members...</td></tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <button onclick="closeAllMembersList()" class="shajra-modal-action-btn">Close</button>
+    </div>
+</div>
+
+<div id="eventsModal" class="shajra-modal-overlay">
+    <div class="shajra-modal-content" style="max-width: 90%; width: 500px; padding: 15px;">
+        <span class="shajra-modal-close-x" onclick="closeEvents()">&times;</span>
+        <div class="shajra-modal-title" style="margin-bottom: 15px;"><i class="fa-solid fa-calendar-check"></i> Events & Reminders</div>
+        
+        <div class="events-tabs" style="display: flex; justify-content: space-around; margin-bottom: 15px;">
+            <button class="event-tab-btn active-tab" data-target="upcoming" onclick="showEventsTab('upcoming')">Upcoming Events (آئندہ)</button>
+            <button class="event-tab-btn" data-target="past" onclick="showEventsTab('past')">Past Events (گزرے)</button>
+        </div>
+
+        <div id="upcomingEventsContainer" class="event-list-container">
+            <div style="text-align:center; color:#555; padding:20px;"><i class="fa-solid fa-spinner fa-spin"></i> Loading events...</div>
+        </div>
+        
+        <div id="pastEventsContainer" class="event-list-container" style="display:none;">
+             <div style="text-align:center; color:#555; padding:20px;"><i class="fa-solid fa-spinner fa-spin"></i> Loading events...</div>
+        </div>
+
+        <button onclick="closeEvents()" class="shajra-modal-action-btn">Close</button>
+    </div>
+</div>
+
 
 <script>
 // Global variable to store all members data
 let allMembersData = []; 
-let currentRootId = null; // Track the currently loaded root member ID
+let currentRootId = null; 
+let isHorizontal = false; // NEW: Track view state for Horizontal/Vertical toggle
 
-// --- Age Calculation Function (NEW) ---
+// NEW Global Sort State for All Members Table
+let currentSortColumn = 'full_name';
+let currentSortDirection = 'asc';
+
+
+// --- Age Calculation Function (Updated in Detail Modal) ---
 function calculateAge(dob, dod, isAlive) {
     if (!dob) return 'N/A';
 
@@ -485,7 +795,6 @@ function calculateAge(dob, dod, isAlive) {
     let age = endDate.getFullYear() - dobDate.getFullYear();
     const monthDifference = endDate.getMonth() - dobDate.getMonth();
     
-    // Adjust age if birthday hasn't passed yet this year/end date
     if (monthDifference < 0 || (monthDifference === 0 && endDate.getDate() < dobDate.getDate())) {
         age--;
     }
@@ -495,23 +804,43 @@ function calculateAge(dob, dod, isAlive) {
     return `${statusText} ${age} years)`;
 }
 
+// --- NEW: Toggle Horizontal/Vertical View ---
+function toggleTreeView() {
+    isHorizontal = !isHorizontal;
+    const tree = document.getElementById('visualTreeContainer');
+    const button = document.getElementById('toggleViewBtn');
 
-// --- Modal Functions (unchanged, added toggleSearch) ---
-function toggleMenu(){ document.getElementById("myDropdown").classList.toggle("show"); }
-window.onclick = e => { if(!e.target.matches('.shajra-nav-btn') && !e.target.closest('.shajra-nav-btn') && !e.target.matches('#memberSearchInput')) { document.getElementById("myDropdown").classList.remove('show'); } }
-
-// NEW: Toggle search bar visibility
-function toggleSearch() {
-    const searchContainer = document.getElementById('searchContainer');
-    searchContainer.style.display = searchContainer.style.display === 'none' ? 'flex' : 'none';
-    document.getElementById("myDropdown").classList.remove('show');
-    if (searchContainer.style.display === 'flex') {
-        document.getElementById('memberSearchInput').focus();
+    if (isHorizontal) {
+        tree.classList.add('shajra-horizontal-tree');
+        button.innerHTML = '<i class="fa-solid fa-arrows-up-down"></i> Vertical View';
+        // Scroll to the start (left)
+        tree.scrollLeft = 0; 
     } else {
-        // Clear search and reload full tree if search is closed
-        document.getElementById('memberSearchInput').value = '';
-        if (currentRootId) loadFamilyTree(currentRootId);
+        tree.classList.remove('shajra-horizontal-tree');
+        button.innerHTML = '<i class="fa-solid fa-arrows-left-right"></i> Horizontal View';
     }
+}
+
+
+// --- Modal Functions ---
+function toggleMenu(){ document.getElementById("myDropdown").classList.toggle("show"); }
+window.onclick = e => { if(!e.target.matches('.shajra-nav-btn') && !e.target.closest('.shajra-nav-btn') && !e.target.matches('#memberSearchInput') && !e.target.matches('#memberListSearch') && !e.target.closest('.search-close-btn')) { document.getElementById("myDropdown").classList.remove('show'); } }
+
+// UPDATED: Toggle Search Function
+function toggleSearch(isForcedClose = false) { 
+    const searchContainer = document.getElementById('searchContainer');
+    
+    if (searchContainer.style.display === 'flex' || isForcedClose) {
+        // Close action
+        searchContainer.style.display = 'none';
+        document.getElementById('memberSearchInput').value = ''; // Clear input
+        if (currentRootId) loadFamilyTree(currentRootId); // Reload full tree
+    } else {
+        // Open action (Only triggered by menu click)
+        searchContainer.style.display = 'flex';
+        document.getElementById('memberSearchInput').focus();
+    }
+    document.getElementById("myDropdown").classList.remove('show');
 }
 
 function openAbout(){ document.getElementById("aboutModal").style.display="flex"; document.getElementById("myDropdown").classList.remove('show'); }
@@ -520,7 +849,340 @@ function openAnalytics(){ document.getElementById("analyticsModal").style.displa
 function closeAnalytics(){ document.getElementById("analyticsModal").style.display="none"; }
 function closeDetail(){ document.getElementById("detailModal").style.display="none"; }
 
-// --- Detail Modal Logic (UPDATED to include age) ---
+// --- Events & Reminders Modal Functions ---
+function openEvents(){ 
+    document.getElementById("eventsModal").style.display="flex"; 
+    document.getElementById("myDropdown").classList.remove('show'); 
+    loadEvents(); // Load data when modal opens
+}
+function closeEvents(){ 
+    document.getElementById("eventsModal").style.display="none"; 
+}
+
+function showEventsTab(tabId) {
+    document.querySelectorAll('.event-list-container').forEach(container => container.style.display = 'none');
+    document.getElementById(tabId + 'EventsContainer').style.display = 'block';
+    
+    document.querySelectorAll('.event-tab-btn').forEach(btn => btn.classList.remove('active-tab'));
+    document.querySelector(`.event-tab-btn[data-target="${tabId}"]`).classList.add('active-tab');
+}
+
+// Helper to format date
+function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    // Use the original date string to create a date object
+    const date = new Date(dateString);
+    const options = { year: 'numeric', month: 'short', day: 'numeric' };
+    return date.toLocaleDateString('en-US', options);
+}
+
+// Calculates days difference
+function calculateDaysDifference(date) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const eventDate = new Date(date);
+    eventDate.setHours(0, 0, 0, 0);
+
+    const diffTime = eventDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return 'Today!';
+    if (diffDays === 1) return 'Tomorrow';
+    if (diffDays > 0) return `in ${diffDays} days`;
+    if (diffDays === -1) return 'Yesterday';
+    return `${Math.abs(diffDays)} days ago`;
+}
+
+// Main logic for fetching and displaying events
+async function loadEvents() {
+    const upcomingContainer = document.getElementById('upcomingEventsContainer');
+    const pastContainer = document.getElementById('pastEventsContainer');
+    
+    upcomingContainer.innerHTML = '<div style="text-align:center; padding:20px;"><i class="fa-solid fa-spinner fa-spin"></i> Loading events...</div>';
+    pastContainer.innerHTML = '<div style="text-align:center; padding:20px;"><i class="fa-solid fa-spinner fa-spin"></i> Loading events...</div>';
+    
+    // Use global allMembersData if loaded, otherwise fetch it.
+    const members = allMembersData.length > 0 ? allMembersData : (await _supabase.from('family_data').select('*')).data;
+    
+    if (!members) {
+        upcomingContainer.innerHTML = '<div style="color:red; text-align:center; padding:20px;">Error loading member data.</div>';
+        pastContainer.innerHTML = '';
+        return;
+    }
+
+    const events = [];
+    const currentYear = new Date().getFullYear();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    members.forEach(m => {
+        // 1. Birthdays (if DOB exists)
+        if (m.dob) {
+            const dob = new Date(m.dob);
+            // Create event date for THIS year
+            const thisYearEvent = new Date(currentYear, dob.getMonth(), dob.getDate());
+            thisYearEvent.setHours(0, 0, 0, 0);
+            
+            // Calculate age only if alive
+            const ageText = m.is_alive ? `(Turning ${currentYear - dob.getFullYear()})` : `(Would be ${currentYear - dob.getFullYear()})`;
+
+            events.push({
+                date: thisYearEvent,
+                title: `${m.full_name}'s Birthday ${ageText}`,
+                icon: m.gender && m.gender.toLowerCase() === 'f' ? 'fa-cake-candles' : 'fa-gift',
+                type: 'birthday',
+                originalDate: m.dob
+            });
+        }
+
+        // 2. Anniversaries (Death - if not alive and DOD exists)
+        if (!m.is_alive && m.dod) {
+            const dod = new Date(m.dod);
+             // Create event date for THIS year
+            const thisYearEvent = new Date(currentYear, dod.getMonth(), dod.getDate());
+            thisYearEvent.setHours(0, 0, 0, 0);
+            
+            const yearsPassed = currentYear - dod.getFullYear();
+            const yearsText = `(${yearsPassed}${yearsPassed === 1 ? 'st' : 'th'} Anniversary)`;
+            
+            events.push({
+                date: thisYearEvent,
+                title: `${m.full_name}'s Death Anniversary ${yearsText}`,
+                icon: 'fa-cross',
+                type: 'death',
+                originalDate: m.dod
+            });
+        }
+    });
+
+    // Sort all events chronologically
+    events.sort((a, b) => a.date - b.date);
+
+    const upcomingEvents = [];
+    const pastEvents = [];
+
+    // Separate into upcoming and past events (relative to today)
+    events.forEach(event => {
+        // If the event is today or in the future
+        if (event.date >= today) {
+            upcomingEvents.push(event);
+        } else {
+            // Only add to past if it occurred in the current calendar year
+            if (event.date.getFullYear() === currentYear) {
+                 pastEvents.push(event);
+            }
+        }
+    });
+
+    // Render lists (Past events are shown newest first)
+    renderEventList(upcomingEvents, upcomingContainer, 'upcoming');
+    renderEventList(pastEvents.reverse(), pastContainer, 'past'); 
+}
+
+
+function renderEventList(events, container, type) {
+    if (events.length === 0) {
+        container.innerHTML = `<div style="text-align:center; color:#777; padding:20px;">
+            <i class="fa-solid fa-circle-info"></i> No ${type} events found for this year.
+        </div>`;
+        return;
+    }
+    
+    let html = '';
+    events.forEach(event => {
+        const daysDiffText = calculateDaysDifference(event.date);
+        const cardClass = type === 'past' ? 'past' : '';
+        const cardColor = event.type === 'death' ? '#e74c3c' : (event.type === 'birthday' ? '#2ecc71' : '#3498db');
+
+        html += `
+            <div class="event-card ${cardClass}" style="border-left-color: ${cardColor};">
+                <div class="event-icon" style="color: ${cardColor};">
+                    <i class="fa-solid ${event.icon}"></i>
+                </div>
+                <div class="event-details">
+                    <div class="event-title">${event.title}</div>
+                    <div class="event-date">
+                         ${formatDate(event.date)} 
+                         <span class="event-days">${daysDiffText}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+// --- END Events & Reminders Modal Functions ---
+
+
+// --- All Members List Modal Functions ---
+function openAllMembersList() {
+    document.getElementById("myDropdown").classList.remove('show');
+    document.getElementById("allMembersModal").style.display = "flex";
+    if (allMembersData.length === 0) {
+        loadAllMembersData(true); 
+    } else {
+        renderMemberList();
+    }
+}
+
+function closeAllMembersList() {
+    document.getElementById("allMembersModal").style.display = "none";
+}
+
+// Function to fetch all data if not available
+async function loadAllMembersData(renderAfterLoad = false) {
+    const body = document.getElementById('memberListBody');
+    body.innerHTML = '<tr><td colspan="5" style="text-align:center;"><i class="fa-solid fa-spinner fa-spin"></i> Loading all members from Database...</td></tr>';
+    
+    const { data, error } = await _supabase.from('family_data').select('*');
+    allMembersData = data || []; 
+
+    if (error) {
+        body.innerHTML = `<tr><td colspan="5" style='color:red; text-align:center;'>Data load error: ${error.message}</td></tr>`;
+        return;
+    }
+    
+    if (renderAfterLoad) {
+        renderMemberList();
+    }
+}
+
+// Function to calculate Age for display in the table
+function getAgeForList(dob, isAlive, dod) {
+    if (!dob) return 'N/A';
+    const dobDate = new Date(dob);
+    let endDate = isAlive ? new Date() : (dod ? new Date(dod) : new Date());
+    
+    let age = endDate.getFullYear() - dobDate.getFullYear();
+    const monthDifference = endDate.getMonth() - dobDate.getMonth();
+    
+    if (monthDifference < 0 || (monthDifference === 0 && endDate.getDate() < dobDate.getDate())) {
+        age--;
+    }
+    return age >= 0 ? age : 'N/A';
+}
+
+// Function to sort the members list
+function sortMemberList(a, b) {
+    const column = currentSortColumn;
+    const dir = currentSortDirection === 'asc' ? 1 : -1;
+
+    let valA = a[column];
+    let valB = b[column];
+    
+    // Custom handling for Age sorting (using DOB column)
+    if (column === 'dob') {
+        valA = getAgeForList(a.dob, a.is_alive, a.dod);
+        valB = getAgeForList(b.dob, b.is_alive, b.dod);
+        
+        if (valA === 'N/A') return dir * 1;
+        if (valB === 'N/A') return dir * -1;
+        
+        // Sort by Age (Largest Age first for 'asc' means oldest first)
+        return dir * (valB - valA); 
+    }
+    
+    // Custom handling for Status (is_alive boolean)
+     if (column === 'is_alive') {
+        valA = a.is_alive ? 1 : 0;
+        valB = b.is_alive ? 1 : 0;
+        // Alive first
+        return dir * (valB - valA); 
+    }
+    
+    // Default string comparison
+    if (typeof valA === 'string') {
+        return dir * (valA || '').localeCompare((valB || ''), 'en', { sensitivity: 'base' });
+    }
+    
+    // Default numeric comparison
+    if (valA < valB) return dir * -1;
+    if (valA > valB) return dir * 1;
+    return 0;
+}
+
+
+// Function to render the table body
+function renderMemberList(members = allMembersData) {
+    const body = document.getElementById('memberListBody');
+    body.innerHTML = '';
+    
+    // Apply sorting before rendering
+    members.sort(sortMemberList);
+
+    if (members.length === 0) {
+        body.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#777; padding: 20px;">No members found matching the criteria.</td></tr>';
+        
+    }
+
+    members.forEach(member => {
+        const age = getAgeForList(member.dob, member.is_alive, member.dod);
+        const statusText = member.is_alive ? 'Alive' : 'Deceased';
+        const genderText = member.gender && member.gender.toLowerCase() === 'f' ? 'Female' : 'Male';
+        
+        body.innerHTML += `
+            <tr onclick="openMemberDetail(${member.id})" style="cursor:pointer;">
+                <td data-value="${member.full_name}">${member.full_name}</td>
+                <td data-value="${genderText}">${genderText}</td>
+                <td data-value="${statusText}" style="color:${member.is_alive ? '#2ecc71' : '#e74c3c'}; font-weight:600;">${statusText}</td>
+                <td data-value="${age}">${age === 'N/A' ? age : age + ' yrs'}</td>
+                <td><button class="details-link" onclick="event.stopPropagation(); openMemberDetail(${member.id});">View</button></td>
+            </tr>
+        `;
+    });
+    
+    // Update header classes to show current sort state
+    document.querySelectorAll('#memberListHeader th').forEach(th => {
+        th.classList.remove('asc', 'desc');
+        if (th.getAttribute('data-sort') === currentSortColumn) {
+            th.classList.add(currentSortDirection);
+        }
+    });
+}
+
+// Search/Filter function
+function filterMemberList() {
+    const searchText = document.getElementById('memberListSearch').value.toLowerCase().trim();
+    
+    if (searchText.length < 1) {
+        renderMemberList();
+        return;
+    }
+    
+    const filtered = allMembersData.filter(member => {
+        const fullName = (member.full_name || '').toLowerCase();
+        const status = member.is_alive ? 'alive' : 'deceased';
+        const gender = (member.gender || '').toLowerCase();
+        
+        return fullName.includes(searchText) || 
+               status.includes(searchText) ||
+               gender.includes(searchText);
+    });
+    
+    renderMemberList(filtered);
+}
+
+// Listener for table header clicks
+function setupSortListeners() {
+    document.querySelectorAll('#memberListHeader .sortable').forEach(th => {
+        th.addEventListener('click', function() {
+            const newColumn = this.getAttribute('data-sort');
+            
+            if (currentSortColumn === newColumn) {
+                currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSortColumn = newColumn;
+                currentSortDirection = 'asc'; // Default ascending for new column
+            }
+            renderMemberList();
+        });
+    });
+}
+// --- END All Members List Functions ---
+
+
+// --- Detail Modal Logic (UPDATED to include age and icon logic) ---
 async function openMemberDetail(memberId) {
     const modalContentArea = document.getElementById('modalContentArea');
     modalContentArea.innerHTML = `<div style="font-size:18px; color:#555; padding-top:10px;"><i class="fa-solid fa-spinner fa-spin"></i> Loading Data for ID: ${memberId}...</div>`;
@@ -545,11 +1207,11 @@ function renderDetailModal(data, modalContentArea) {
     const statusText = data.is_alive ? 'زندہ (Alive)' : 'انتقال کر گئے (Deceased)';
     const genderText = data.gender ? (data.gender.toLowerCase() === 'm' ? 'مرد (Male)' : 'عورت (Female)') : 'N/A';
     const dobText = data.dob || 'N/A';
+    const dodText = data.dod || 'N/A';
     const phoneText = data.phone || 'N/A';
     const relationText = data.relation || 'N/A'; 
-    const imageSrc = data.image_url || 'https://via.placeholder.com/120/fff8e1/a0522d?text=PIC';
     
-    // Calculate Age (NEW)
+    // Calculate Age 
     const ageInfo = calculateAge(data.dob, data.dod, data.is_alive);
 
     // SPOUSE LOGIC
@@ -571,14 +1233,30 @@ function renderDetailModal(data, modalContentArea) {
     const spouseHtml = `<div class="modal-data-row"><span>Spouse (شریک حیات)</span><span>${spouseName}${spouseSource}</span></div>`;
 
     
+    // NEW: Gender-specific image/icon logic for detail modal
+    let profileImageHtml = '';
+    if (data.image_url) {
+        profileImageHtml = `<img src="${data.image_url}" alt="${data.full_name}" class="modal-profile-img">`;
+    } else {
+        const iconClass = data.gender && data.gender.toLowerCase() === 'f' ? 'fa-person-dress' : 'fa-person';
+        const iconColor = data.gender && data.gender.toLowerCase() === 'f' ? '#d90429' : '#1e40af'; 
+        
+        profileImageHtml = `<div class="modal-profile-icon">
+                                <i class="fa-solid ${iconClass}" style="font-size: 60px; color: ${iconColor};"></i>
+                            </div>`;
+    }
+
+    
     const modalHtml = `
-        <img src="${imageSrc}" alt="${data.full_name}" class="modal-profile-img">
+        ${profileImageHtml}
         <div class="modal-full-name">${data.full_name}</div>
         <div class="modal-relation">رشتہ: ${relationText}</div>
         <div class="detail-data-section" style="margin-top:20px;">
             <div class="modal-data-row"><span>Status</span><span>${statusText}</span></div>
-            <div class="modal-data-row"><span>Age</span><span>${ageInfo}</span></div> <div class="modal-data-row"><span>Gender</span><span>${genderText}</span></div>
+            <div class="modal-data-row"><span>Age</span><span>${ageInfo}</span></div> 
+            <div class="modal-data-row"><span>Gender</span><span>${genderText}</span></div>
             <div class="modal-data-row"><span>Date of Birth</span><span>${dobText}</span></div>
+            ${data.is_alive ? '' : `<div class="modal-data-row"><span>Date of Death</span><span>${dodText}</span></div>`}
             ${spouseHtml} 
             <div class="modal-data-row"><span>Phone/Contact</span><span>${phoneText}</span></div>
         </div>
@@ -601,15 +1279,27 @@ window.toggleChildren = function(element, event) {
 }
 
 
-// --- Tree Generation Logic (UPDATED to accept rootId) ---
+// --- Tree Generation Logic (UPDATED with icon logic) ---
 function createTreeHtml(member){
     const nameToDisplay = member.full_name || 'نامعلوم';
-    const imageSrc = member.image_url || 'https://via.placeholder.com/60/fff8e1/a0522d?text=PIC';
     const hasChildren = member.children && member.children.length > 0;
+    
+    // NEW: Gender-specific image/icon logic for tree view
+    let imageHtml = '';
+    if (member.image_url) {
+        imageHtml = `<img src="${member.image_url}" alt="${nameToDisplay}" class="member-img">`;
+    } else {
+        const iconClass = member.gender && member.gender.toLowerCase() === 'f' ? 'fa-person-dress' : 'fa-person';
+        const iconColor = member.gender && member.gender.toLowerCase() === 'f' ? '#e74c3c' : '#3498db'; 
+        
+        imageHtml = `<div class="member-img-placeholder">
+                        <i class="fa-solid ${iconClass}" style="font-size: 30px; color: ${iconColor};"></i>
+                     </div>`;
+    }
     
     let html = `<li id="member-${member.id}">
                   <div class="member-card-wrapper" onclick="openMemberDetail(${member.id})">
-                      <img src="${imageSrc}" alt="${nameToDisplay}" class="member-img">
+                      ${imageHtml}
                       <span class="member-info">${nameToDisplay.toUpperCase()}</span>
                       
                       ${hasChildren ? 
@@ -629,18 +1319,16 @@ function createTreeHtml(member){
     return html;
 }
 
-// NEW FUNCTION: Filters the tree based on search input
+// Filters the tree based on search input (unchanged)
 function filterTree(searchText) {
     const text = searchText.toLowerCase().trim();
     const container = document.getElementById('visualTreeContainer');
     
     if (!text || text.length < 2) {
-        // Reload the full tree if search is empty
         if (currentRootId) loadFamilyTree(currentRootId);
         return;
     }
 
-    // Find members matching the search text
     const matchingMembers = allMembersData.filter(member => 
         member.full_name && member.full_name.toLowerCase().includes(text)
     );
@@ -650,20 +1338,30 @@ function filterTree(searchText) {
         return;
     }
 
-    // Build a temporary tree structure for display
     let searchTreeHtml = "<ul>";
     matchingMembers.forEach(member => {
         const nameToDisplay = member.full_name || 'نامعلوم';
-        const imageSrc = member.image_url || 'https://via.placeholder.com/60/fff8e1/a0522d?text=PIC';
         
-        // Find the root (or parent) to display the context
+        // Use member image/icon logic for search results too
+        let imageHtml = '';
+        if (member.image_url) {
+            imageHtml = `<img src="${member.image_url}" alt="${nameToDisplay}" class="member-img" style="width: 40px; height: 40px;">`;
+        } else {
+            const iconClass = member.gender && member.gender.toLowerCase() === 'f' ? 'fa-person-dress' : 'fa-person';
+            const iconColor = member.gender && member.gender.toLowerCase() === 'f' ? '#e74c3c' : '#3498db'; 
+            
+            imageHtml = `<div class="member-img-placeholder" style="width: 40px; height: 40px; border-width: 2px;">
+                            <i class="fa-solid ${iconClass}" style="font-size: 20px; color: ${iconColor};"></i>
+                         </div>`;
+        }
+        
         const parent = allMembersData.find(m => m.id === member.parent_id);
         const relationInfo = parent ? ` (S/D of ${parent.full_name})` : ' (Root)';
 
         searchTreeHtml += `
             <li id="member-search-${member.id}" style="padding: 15px 5px 0 5px;">
                 <div class="member-card-wrapper" onclick="openMemberDetail(${member.id})" style="min-width: 180px;">
-                    <img src="${imageSrc}" alt="${nameToDisplay}" class="member-img" style="width: 40px; height: 40px;">
+                    ${imageHtml}
                     <span class="member-info" style="font-size: 0.9rem;">${nameToDisplay.toUpperCase()}</span>
                     <span style="font-size: 0.7rem; color: #496075;">${relationInfo}</span>
                 </div>
@@ -679,12 +1377,11 @@ function filterTree(searchText) {
         </a>
         </div>
         ${searchTreeHtml}`;
-    // Temporary tree styling to make it look like a list
     container.querySelector('.family-tree > ul').style.flexWrap = 'wrap'; 
 }
 
 
-// NEW FUNCTION: Load only root members for dropdown
+// Load only root members for dropdown (unchanged)
 async function loadRootMembers() {
     const { data, error } = await _supabase.from('family_data').select('id, full_name').is('parent_id', null).order('full_name', { ascending: true });
 
@@ -700,7 +1397,6 @@ async function loadRootMembers() {
         data.forEach(m => {
             select.innerHTML += `<option value="${m.id}">${m.full_name}</option>`;
         });
-        // Automatically select the first root member and load their tree
         select.value = data[0].id;
         loadFamilyTree(data[0].id);
     } else {
@@ -709,11 +1405,11 @@ async function loadRootMembers() {
     }
 }
 
-// UPDATED FUNCTION: Load tree based on selected rootId and display name
+// UPDATED FUNCTION: Load tree based on selected rootId and apply view state
 async function loadFamilyTree(rootId) {
     const container = document.getElementById('visualTreeContainer');
     const nameDisplay = document.getElementById('currentFamilyName');
-    currentRootId = rootId; // Store root ID globally
+    currentRootId = rootId; 
     
     if (!rootId) {
         container.innerHTML = `<div style='color:#777; padding:20px;'>فیملی دیکھنے کے لیے اوپر سے کوئی رُوٹ (بنیادی ممبر) منتخب کریں۔</div>`; 
@@ -721,14 +1417,12 @@ async function loadFamilyTree(rootId) {
         return;
     }
 
-    // 1. Get the name of the selected family head
     const selectedOption = document.getElementById('rootMemberSelect').options[document.getElementById('rootMemberSelect').selectedIndex];
     const familyName = selectedOption ? selectedOption.text : "نامعلوم فیملی";
     
     nameDisplay.innerHTML = `<i class="fa-solid fa-sitemap"></i> ${familyName} فیملی شجرہ`;
     container.innerHTML = `<div style="color:#999; margin-top:50px;"><i class="fa-solid fa-spinner fa-spin"></i> شجرہ لوڈ ہو رہا ہے...</div>`;
 
-    // 2. Fetch data and build tree
     const { data, error } = await _supabase.from('family_data').select('*');
     allMembersData = data || []; 
 
@@ -765,6 +1459,13 @@ async function loadFamilyTree(rootId) {
     treeHtml += "</ul>";
 
     container.innerHTML = treeHtml;
+    
+    // Apply horizontal class if toggled
+    if (isHorizontal) {
+        container.classList.add('shajra-horizontal-tree');
+    } else {
+        container.classList.remove('shajra-horizontal-tree');
+    }
 }
 
 
@@ -830,6 +1531,7 @@ async function loadSiteSettings() {
 document.addEventListener('DOMContentLoaded', () => {
     loadSiteSettings();
     loadRootMembers(); 
+    setupSortListeners(); // Setup listeners for the new sortable table header
 });
 </script>
 </body>

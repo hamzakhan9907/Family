@@ -15,14 +15,18 @@
         const SUPABASE_ANON_KEY = k1 + k2 + k3; 
         const _supabase = supabase.createClient(supabaseUrl, SUPABASE_ANON_KEY);
         
+        // --- ADDED SESSION CONSTANT (Masla 1 ke liye) ---
+        const SESSION_TIMEOUT_MS = 60 * 1000; // 1 minute in milliseconds
+        // ------------------------------------------------
+
         // --- DB-DRIVEN ADMIN PASSCODE ---
         let adminPasswordHash = null; // Password will be fetched from DB
         let settingsLoaded = false; 
         // ---------------------------------
         
         // --- AUTH & SETUP ---
-        function setLoggedIn(status) {
-            localStorage.setItem('isAdminLoggedIn', status ? 'true' : 'false');
+        // Helper function to handle UI changes and initialization
+        function togglePanelDisplay(status) {
             if (status) {
                 document.getElementById('loginPage').style.display = 'none';
                 document.getElementById('adminPanel').style.display = 'block';
@@ -35,15 +39,68 @@
                 document.getElementById('adminPanel').style.display = 'none';
             }
         }
-        function checkLoginStatus() {
-            if (localStorage.getItem('isAdminLoggedIn') === 'true') {
-                setLoggedIn(true);
-            } else {
-                setLoggedIn(false);
+
+        // Function to extend the session (NEW for Masla 1)
+        function refreshSession() {
+            // Check if still logged in via expiry token before refreshing
+            const expiryString = localStorage.getItem('adminSessionExpiry');
+            // Only refresh if the expiry string exists AND the current time is before the stored expiry time
+            if (expiryString && Date.now() < parseInt(expiryString, 10)) { 
+                const expiry = Date.now() + SESSION_TIMEOUT_MS;
+                localStorage.setItem('adminSessionExpiry', expiry.toString());
             }
+        }
+        
+        // Main function for session state management (MODIFIED for Masla 1)
+        function setLoggedIn(status) {
+            // 1. Update localStorage for session tracking (Masla 1 fix)
+            if (status) {
+                // Set expiry time 1 minute from now in localStorage
+                const expiry = Date.now() + SESSION_TIMEOUT_MS;
+                localStorage.setItem('adminSessionExpiry', expiry.toString());
+                
+                // Start the periodic refresh only once after login
+                if (!window.sessionRefreshInterval) {
+                    // Run this every 30 seconds (half the timeout)
+                    window.sessionRefreshInterval = setInterval(refreshSession, SESSION_TIMEOUT_MS / 2);
+                }
+            } else {
+                // Clear expiry on explicit logout
+                localStorage.removeItem('adminSessionExpiry');
+                
+                // Clear the periodic check
+                if (window.sessionRefreshInterval) {
+                    clearInterval(window.sessionRefreshInterval);
+                    window.sessionRefreshInterval = null;
+                }
+            }
+            
+            // 2. Update UI
+            togglePanelDisplay(status);
+        }
+        
+        // Check session status on page load (MODIFIED for Masla 1)
+        function checkLoginStatus() {
+            const expiryString = localStorage.getItem('adminSessionExpiry');
+            
+            if (expiryString) {
+                const expiryTime = parseInt(expiryString, 10);
+                if (Date.now() < expiryTime) {
+                    // If still logged in, refresh the session and start the periodic check
+                    setLoggedIn(true); 
+                } else {
+                    // Session expired, clear storage
+                    localStorage.removeItem('adminSessionExpiry');
+                    togglePanelDisplay(false);
+                }
+            } else {
+                 togglePanelDisplay(false);
+            }
+            
             // Load the password hash from DB
             fetchAdminPassword();
         }
+
         async function fetchAdminPassword() {
             const { data, error } = await _supabase.from('site_config').select('admin_password').limit(1);
             if (data && data.length > 0) {
@@ -65,9 +122,13 @@
             }
             document.getElementById('passcode').value = '';
         }
+        
+        // --- LOGOUT FUNCTION (MODIFIED for Masla 2) ---
         function logoutAdmin() {
             setLoggedIn(false);
             alert("Logged out.");
+            // ISSUE 2 FIX: Redirect to index.html
+            window.location.href = 'index.html'; 
         }
         
         // --- SECTION SWITCHING (NEW OLD STYLE NAVIGATION) ---
@@ -359,7 +420,7 @@
 
             alert("Admin Passcode successfully changed and saved to Supabase! You will now be logged out to apply the new setting.");
             
-            // 3. Force logout (removes only the 'isAdminLoggedIn' status from local storage)
+            // 3. Force logout
             logoutAdmin();
         }
 

@@ -14,6 +14,11 @@ const k2 = "iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ0MTUwNTAsImV4cCI6MjA3OTk5MTA1MH0
 const k3 = ".mwKu_g5_OT_89KcAeeSsY8IMlnakV2nQVtKRhWWTcDw";
 const SUPABASE_ANON_KEY = k1 + k2 + k3; // Key ko jod diya gaya hai
 const _supabase = supabase.createClient(supabaseUrl, SUPABASE_ANON_KEY);
+
+// NEW: Global variable to store the female detail passcode fetched from the database
+let femalePasscode = null; 
+// NEW: Global variable to store member data pending password verification
+let tempMemberData = null; 
 </script>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -91,6 +96,66 @@ header { background-color: #2c3e50; padding:10px 15px; display:flex; justify-con
 /* UNIQUE CLASS FOR BOTTOM BUTTON */
 .shajra-modal-action-btn { background:#f1f2f6; border:none; padding:12px 0; width:100%; border-radius:10px; font-weight:bold; color:#555; cursor:pointer; margin-top:10px; transition: background 0.2s; }
 .shajra-modal-action-btn:hover { background: #e0e0e0; }
+
+
+/* ---------------------------------------------------------------------------------- */
+/* ---------- PASSCODE MODAL SPECIFIC STYLES (NEW) ----- */
+/* ---------------------------------------------------------------------------------- */
+#passcodeModal .shajra-modal-content {
+    max-width: 350px;
+    padding: 30px 20px;
+}
+.passcode-icon {
+    font-size: 50px;
+    color: #e67e22; /* Orange color for security */
+    margin-bottom: 15px;
+}
+.passcode-instruction {
+    font-family: 'Noto Nastaliq Urdu', serif;
+    font-size: 16px;
+    color: #34495e;
+    margin-bottom: 20px;
+    line-height: 1.6;
+}
+.passcode-input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #bdc3c7;
+    border-radius: 8px;
+    font-size: 18px;
+    text-align: center;
+    letter-spacing: 2px;
+    margin-bottom: 5px; /* Reduced margin to fit error display */
+    outline: none;
+    transition: border-color 0.3s;
+}
+.passcode-input:focus {
+    border-color: #3498db;
+    box-shadow: 0 0 5px rgba(52, 152, 219, 0.5);
+}
+.passcode-error {
+    color: #e74c3c;
+    font-weight: 600;
+    font-size: 13px;
+    margin-bottom: 10px;
+    min-height: 20px;
+}
+.passcode-submit-btn {
+    background: #2ecc71;
+    color: white;
+    border: none;
+    padding: 12px;
+    width: 100%;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.3s;
+    font-size: 16px;
+    margin-top: 5px;
+}
+.passcode-submit-btn:hover {
+    background: #27ae60;
+}
 
 
 /* ---------------------------------------------------------------------------------- */
@@ -665,6 +730,29 @@ header { background-color: #2c3e50; padding:10px 15px; display:flex; justify-con
     </div>
 </div>
 
+<div id="passcodeModal" class="shajra-modal-overlay" onclick="if(event.target.id === 'passcodeModal') closePasscodeModal();">
+    <div class="shajra-modal-content">
+        <span class="shajra-modal-close-x" onclick="closePasscodeModal()">&times;</span>
+        <i class="fa-solid fa-user-shield passcode-icon"></i>
+        <div class="shajra-modal-title" style="margin-bottom: 10px;">Security Check</div>
+        
+        <div class="passcode-instruction">
+            یہ ایک خاندانی عورت کی تفصیل ہے۔ تفصیل دیکھنے کے لیے پاس کوڈ درج کریں۔
+        </div>
+        
+        <input type="password" id="femalePasscodeInput" class="passcode-input" placeholder="Passcode Darj Karein..." onkeydown="if(event.key==='Enter') verifyFemalePasscode();">
+        
+        <div id="passcodeError" class="passcode-error"></div>
+        
+        <button class="passcode-submit-btn" onclick="verifyFemalePasscode()">
+            <i class="fa-solid fa-lock-open"></i> View Details
+        </button>
+
+        <button onclick="closePasscodeModal()" class="shajra-modal-action-btn" style="margin-top: 15px; background: #e74c3c; color: white;">Cancel</button>
+    </div>
+</div>
+
+
 <div id="analyticsModal" class="shajra-modal-overlay">
     <div class="shajra-modal-content">
         <span class="shajra-modal-close-x" onclick="closeAnalytics()">&times;</span>
@@ -775,6 +863,19 @@ let isHorizontal = false; // NEW: Track view state for Horizontal/Vertical toggl
 let currentSortColumn = 'full_name';
 let currentSortDirection = 'asc';
 
+// NEW: Function to mask female names (e.g., Maryam -> Ma****)
+function maskFemaleName(fullName, gender) {
+    if (gender && gender.toLowerCase() === 'f') {
+        if (!fullName || fullName.length < 2) return 'F-****';
+        // Take the first two characters (case insensitive)
+        const firstTwo = fullName.substring(0, 2);
+        // Mask the rest of the characters
+        const maskedPart = '*'.repeat(fullName.length - 2);
+        return firstTwo + maskedPart;
+    }
+    return fullName;
+}
+
 
 // --- Age Calculation Function (Updated in Detail Modal) ---
 function calculateAge(dob, dod, isAlive) {
@@ -848,6 +949,62 @@ function closeAbout(){ document.getElementById("aboutModal").style.display="none
 function openAnalytics(){ document.getElementById("analyticsModal").style.display="flex"; calcStats(); }
 function closeAnalytics(){ document.getElementById("analyticsModal").style.display="none"; }
 function closeDetail(){ document.getElementById("detailModal").style.display="none"; }
+
+// --- NEW Passcode Modal Functions ---
+function openPasscodeModal(data) {
+    tempMemberData = data;
+    // We display the detail modal behind it so it gets the overlay effect, but it's empty
+    document.getElementById("detailModal").style.display = "flex"; 
+    document.getElementById('passcodeError').innerText = ''; // Clear previous errors
+    document.getElementById('femalePasscodeInput').value = ''; // Clear input
+    document.getElementById("passcodeModal").style.display = "flex";
+    // Focus on input after modal is displayed
+    setTimeout(() => document.getElementById('femalePasscodeInput').focus(), 100);
+}
+
+function closePasscodeModal() {
+    document.getElementById("passcodeModal").style.display = "none";
+    // Also close the detail modal overlay
+    document.getElementById("detailModal").style.display = "none"; 
+    tempMemberData = null; // Clear temporary data
+}
+
+// Function to handle passcode submission
+async function verifyFemalePasscode() {
+    const inputField = document.getElementById('femalePasscodeInput');
+    const inputPassword = inputField.value.trim();
+    const errorDisplay = document.getElementById('passcodeError');
+    
+    errorDisplay.innerText = ''; // Clear error message
+
+    if (!inputPassword) {
+        errorDisplay.innerText = "برائے مہربانی پاس کوڈ درج کریں۔";
+        inputField.focus();
+        return;
+    }
+
+    const requiredPasscode = femalePasscode; 
+    
+    if (!requiredPasscode) {
+         errorDisplay.innerText = "سیکیورٹی سسٹم میں خرابی۔ براہ کرم ایڈمن سے رابطہ کریں۔";
+         return;
+    }
+
+    if (inputPassword === requiredPasscode) { 
+        // Correct password entered
+        document.getElementById("passcodeModal").style.display = "none"; // Only close passcode modal
+        
+        // Use the temporarily stored data to render the detail modal (detail modal remains open)
+        renderAndShowDetailModal(tempMemberData);
+        tempMemberData = null; // Clear temp data
+    } else {
+        errorDisplay.innerText = "غلط پاس کوڈ۔ دوبارہ کوشش کریں یا منسوخ کریں۔";
+        inputField.value = ''; // Clear input on wrong attempt
+        inputField.focus();
+    }
+}
+// --- END NEW Passcode Modal Functions ---
+
 
 // --- Events & Reminders Modal Functions ---
 function openEvents(){ 
@@ -1103,7 +1260,7 @@ function sortMemberList(a, b) {
 }
 
 
-// Function to render the table body
+// Function to render the table body (UPDATED to use masked name)
 function renderMemberList(members = allMembersData) {
     const body = document.getElementById('memberListBody');
     body.innerHTML = '';
@@ -1121,9 +1278,12 @@ function renderMemberList(members = allMembersData) {
         const statusText = member.is_alive ? 'Alive' : 'Deceased';
         const genderText = member.gender && member.gender.toLowerCase() === 'f' ? 'Female' : 'Male';
         
+        // APPLY MASKING HERE
+        const displayFullName = maskFemaleName(member.full_name, member.gender);
+        
         body.innerHTML += `
             <tr onclick="openMemberDetail(${member.id})" style="cursor:pointer;">
-                <td data-value="${member.full_name}">${member.full_name}</td>
+                <td data-value="${member.full_name}">${displayFullName}</td> 
                 <td data-value="${genderText}">${genderText}</td>
                 <td data-value="${statusText}" style="color:${member.is_alive ? '#2ecc71' : '#e74c3c'}; font-weight:600;">${statusText}</td>
                 <td data-value="${age}">${age === 'N/A' ? age : age + ' yrs'}</td>
@@ -1182,28 +1342,25 @@ function setupSortListeners() {
 // --- END All Members List Functions ---
 
 
-// --- Detail Modal Logic (UPDATED to include age and icon logic) ---
-async function openMemberDetail(memberId) {
+// --- NEW/UPDATED Detail Modal Logic with Custom Password Modal ---
+
+// Renamed original logic to this helper function
+async function renderAndShowDetailModal(data) {
     const modalContentArea = document.getElementById('modalContentArea');
-    modalContentArea.innerHTML = `<div style="font-size:18px; color:#555; padding-top:10px;"><i class="fa-solid fa-spinner fa-spin"></i> Loading Data for ID: ${memberId}...</div>`;
-    document.getElementById("detailModal").style.display = "flex";
-
-    const data = allMembersData.find(m => m.id == memberId);
     
-    if (!data) {
-        const { data: fetchedData, error } = await _supabase.from('family_data').select('*').eq('id', memberId).single();
-        if (error || !fetchedData) {
-            console.error("Error loading member detail:", error);
-            modalContentArea.innerHTML = `<div style="color:red; margin:20px 0; text-align:center;">Data load nahi ho saka. ID: ${memberId}. (Supabase connection issue or ID not found)</div>`;
-            return;
-        }
-        renderDetailModal(fetchedData, modalContentArea);
-    } else {
-        renderDetailModal(data, modalContentArea);
+    // Re-fetch data if needed (only if the passed 'data' is incomplete, which shouldn't happen from global cache)
+    if (!data || !data.full_name) {
+         const { data: fetchedData, error } = await _supabase.from('family_data').select('*').eq('id', data.id).single();
+         if (error || !fetchedData) {
+             console.error("Error loading member detail:", error);
+             modalContentArea.innerHTML = `<div style="color:red; margin:20px 0; text-align:center;">Data load nahi ho saka. ID: ${data.id}. (Supabase connection issue or ID not found)</div>`;
+             return;
+         }
+         data = fetchedData;
     }
-}
-
-function renderDetailModal(data, modalContentArea) {
+    
+    // detailModal is already shown by checkAndLoadDetail (or openPasscodeModal)
+    
     const statusText = data.is_alive ? 'زندہ (Alive)' : 'انتقال کر گئے (Deceased)';
     const genderText = data.gender ? (data.gender.toLowerCase() === 'm' ? 'مرد (Male)' : 'عورت (Female)') : 'N/A';
     const dobText = data.dob || 'N/A';
@@ -1223,7 +1380,9 @@ function renderDetailModal(data, modalContentArea) {
     } else if (data.spouse_id) {
         const spouse = allMembersData.find(m => m.id === data.spouse_id);
         if (spouse) {
-            spouseName = spouse.full_name;
+            // Apply masking to spouse's name if they are female
+            const spouseDisplayName = maskFemaleName(spouse.full_name, spouse.gender); 
+            spouseName = spouseDisplayName;
             spouseSource = ` (ID: ${data.spouse_id})`;
         } else {
             spouseName = `Linked ID: ${data.spouse_id}`;
@@ -1246,7 +1405,7 @@ function renderDetailModal(data, modalContentArea) {
                             </div>`;
     }
 
-    
+    // Name is shown in full here as user provided the passcode
     const modalHtml = `
         ${profileImageHtml}
         <div class="modal-full-name">${data.full_name}</div>
@@ -1264,6 +1423,46 @@ function renderDetailModal(data, modalContentArea) {
     modalContentArea.innerHTML = modalHtml;
 }
 
+// NEW ENTRY POINT: openMemberDetail (Performs password check if female)
+async function openMemberDetail(memberId) {
+    const data = allMembersData.find(m => m.id == memberId);
+    
+    if (!data) {
+        // Fallback: If data is not in cache, fetch it minimally for check
+        const { data: fetchedData } = await _supabase.from('family_data').select('id, full_name, gender').eq('id', memberId).single();
+        if (!fetchedData) {
+            alert("Member data not found!");
+            return;
+        }
+        // Need to load full data later if required, but proceed with check
+        return checkAndLoadDetail(fetchedData);
+    } 
+    
+    checkAndLoadDetail(data);
+}
+
+// MODIFIED checkAndLoadDetail function to use the custom modal
+function checkAndLoadDetail(data) {
+    const modalContentArea = document.getElementById('modalContentArea');
+    
+    // 1. Prepare loading state (in the detail modal behind the passcode modal)
+    modalContentArea.innerHTML = `<div style="font-size:18px; color:#555; padding-top:10px;"><i class="fa-solid fa-spinner fa-spin"></i> Loading Data for ID: ${data.id}...</div>`;
+    
+    // 2. Check if the member is female
+    if (data.gender && data.gender.toLowerCase() === 'f') {
+        
+        // **NEW:** Open the stylish passcode modal
+        openPasscodeModal(data);
+
+    } else {
+        // Male member, open directly
+        // Display the detail modal and render content
+        document.getElementById("detailModal").style.display = "flex";
+        renderAndShowDetailModal(data);
+    }
+}
+// --- END Detail Modal Logic ---
+
 
 // --- Collapse/Expand Logic (unchanged) ---
 window.toggleChildren = function(element, event) {
@@ -1279,9 +1478,12 @@ window.toggleChildren = function(element, event) {
 }
 
 
-// --- Tree Generation Logic (UPDATED with icon logic) ---
+// --- Tree Generation Logic (UPDATED with icon logic and name masking) ---
 function createTreeHtml(member){
-    const nameToDisplay = member.full_name || 'نامعلوم';
+    const nameToDisplayUnmasked = member.full_name || 'نامعلوم';
+    // APPLY MASKING HERE
+    const nameToDisplay = maskFemaleName(nameToDisplayUnmasked, member.gender); 
+    
     const hasChildren = member.children && member.children.length > 0;
     
     // NEW: Gender-specific image/icon logic for tree view
@@ -1319,7 +1521,7 @@ function createTreeHtml(member){
     return html;
 }
 
-// Filters the tree based on search input (unchanged)
+// Filters the tree based on search input (UPDATED to use masked name in display)
 function filterTree(searchText) {
     const text = searchText.toLowerCase().trim();
     const container = document.getElementById('visualTreeContainer');
@@ -1340,7 +1542,9 @@ function filterTree(searchText) {
 
     let searchTreeHtml = "<ul>";
     matchingMembers.forEach(member => {
-        const nameToDisplay = member.full_name || 'نامعلوم';
+        const nameToDisplayUnmasked = member.full_name || 'نامعلوم';
+        // APPLY MASKING HERE
+        const nameToDisplay = maskFemaleName(nameToDisplayUnmasked, member.gender);
         
         // Use member image/icon logic for search results too
         let imageHtml = '';
@@ -1469,7 +1673,7 @@ async function loadFamilyTree(rootId) {
 }
 
 
-// --- Stats and Settings Logic (unchanged) ---
+// --- Stats and Settings Logic (UPDATED to fetch 'female-pass') ---
 async function calcStats() {
     const data = allMembersData.length > 0 ? allMembersData : (await _supabase.from('family_data').select('*')).data;
     
@@ -1514,8 +1718,14 @@ async function calcStats() {
 }
 
 async function loadSiteSettings() {
-    const { data } = await _supabase.from('site_config').select('*').limit(1);
+    // Select all columns to ensure 'female-pass' is fetched
+    const { data } = await _supabase.from('site_config').select('*').limit(1); 
+    
     if(data?.[0]){
+        // Store the passcode fetched from the database column 'female-pass'
+        femalePasscode = data[0]['female-pass'] || data[0].female_pass || '1234'; 
+        
+        // Existing settings logic
         document.getElementById('mainTitle').innerText=data[0].site_name;
         document.getElementById('dynamicUrduText').innerText=data[0].about_urdu;
         document.getElementById('dynamicAboutText').innerText=data[0].contact_desc;

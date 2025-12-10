@@ -15,12 +15,13 @@
         const SUPABASE_ANON_KEY = k1 + k2 + k3; 
         const _supabase = supabase.createClient(supabaseUrl, SUPABASE_ANON_KEY);
         
-        // --- ADDED SESSION CONSTANT (Masla 1 ke liye) ---
+        // --- ADDED SESSION CONSTANT ---
         const SESSION_TIMEOUT_MS = 60 * 1000; // 1 minute in milliseconds
-        // ------------------------------------------------
+        // ------------------------------
 
         // --- DB-DRIVEN ADMIN PASSCODE ---
         let adminPasswordHash = null; // Password will be fetched from DB
+        let femalePasscodeLocal = null; // To store the female detail passcode
         let settingsLoaded = false; 
         // ---------------------------------
         
@@ -40,56 +41,45 @@
             }
         }
 
-        // Function to extend the session (NEW for Masla 1)
+        // Function to extend the session
         function refreshSession() {
             // Check if still logged in via expiry token before refreshing
             const expiryString = localStorage.getItem('adminSessionExpiry');
-            // Only refresh if the expiry string exists AND the current time is before the stored expiry time
             if (expiryString && Date.now() < parseInt(expiryString, 10)) { 
                 const expiry = Date.now() + SESSION_TIMEOUT_MS;
                 localStorage.setItem('adminSessionExpiry', expiry.toString());
             }
         }
         
-        // Main function for session state management (MODIFIED for Masla 1)
+        // Main function for session state management
         function setLoggedIn(status) {
-            // 1. Update localStorage for session tracking (Masla 1 fix)
             if (status) {
-                // Set expiry time 1 minute from now in localStorage
                 const expiry = Date.now() + SESSION_TIMEOUT_MS;
                 localStorage.setItem('adminSessionExpiry', expiry.toString());
                 
-                // Start the periodic refresh only once after login
                 if (!window.sessionRefreshInterval) {
-                    // Run this every 30 seconds (half the timeout)
                     window.sessionRefreshInterval = setInterval(refreshSession, SESSION_TIMEOUT_MS / 2);
                 }
             } else {
-                // Clear expiry on explicit logout
                 localStorage.removeItem('adminSessionExpiry');
                 
-                // Clear the periodic check
                 if (window.sessionRefreshInterval) {
                     clearInterval(window.sessionRefreshInterval);
                     window.sessionRefreshInterval = null;
                 }
             }
-            
-            // 2. Update UI
             togglePanelDisplay(status);
         }
         
-        // Check session status on page load (MODIFIED for Masla 1)
+        // Check session status on page load
         function checkLoginStatus() {
             const expiryString = localStorage.getItem('adminSessionExpiry');
             
             if (expiryString) {
                 const expiryTime = parseInt(expiryString, 10);
                 if (Date.now() < expiryTime) {
-                    // If still logged in, refresh the session and start the periodic check
                     setLoggedIn(true); 
                 } else {
-                    // Session expired, clear storage
                     localStorage.removeItem('adminSessionExpiry');
                     togglePanelDisplay(false);
                 }
@@ -102,18 +92,30 @@
         }
 
         async function fetchAdminPassword() {
-            const { data, error } = await _supabase.from('site_config').select('admin_password').limit(1);
+            // Fetch admin_password, female_pass, and "female-pass" (for compatibility)
+            const { data, error } = await _supabase.from('site_config').select('admin_password, female_pass, "female-pass"').limit(1);
             if (data && data.length > 0) {
-                adminPasswordHash = data[0].admin_password;
+                // FIXED: This ensures admin login uses the DB value
+                adminPasswordHash = data[0].admin_password || "1234";
+                // FIXED: Fetch female passcode and use null if not set
+                femalePasscodeLocal = data[0].female_pass || data[0]['female-pass'] || null; 
             } else if (error) {
                 console.error("Error fetching admin password:", error);
+                adminPasswordHash = "1234"; // Fallback
+                femalePasscodeLocal = null; // Fallback
             } else {
-                 // Set a default if DB is empty for first run
                  adminPasswordHash = "1234"; 
+                 femalePasscodeLocal = null;
+            }
+            // Update the display field
+            if (document.getElementById('currentFemalePasscodeDisplay')) {
+                document.getElementById('currentFemalePasscodeDisplay').value = femalePasscodeLocal || '(No Passcode Set)';
             }
         }
         async function loginAdmin() {
             const passcode = document.getElementById('passcode').value;
+            if (!adminPasswordHash) await fetchAdminPassword(); // Ensure password is loaded
+            
             if (passcode === adminPasswordHash) {
                 setLoggedIn(true);
                 alert("Login successful!");
@@ -123,21 +125,21 @@
             document.getElementById('passcode').value = '';
         }
         
-        // --- LOGOUT FUNCTION (MODIFIED for Masla 2) ---
+        // --- LOGOUT FUNCTION ---
         function logoutAdmin() {
             setLoggedIn(false);
             alert("Logged out.");
-            // ISSUE 2 FIX: Redirect to index.html
             window.location.href = 'index.html'; 
         }
         
-        // --- SECTION SWITCHING (NEW OLD STYLE NAVIGATION) ---
+        // --- SECTION SWITCHING (UPDATED to include femalePasscodeSection) ---
         function showSection(sectionId) {
             // Hide all sections
             document.getElementById('memberManagementSection').style.display = 'none';
             document.getElementById('memberListSection').style.display = 'none';
             document.getElementById('siteSettingsSection').style.display = 'none';
             document.getElementById('passcodeSection').style.display = 'none';
+            document.getElementById('femalePasscodeSection').style.display = 'none'; // Re-added
 
             // Show the requested section
             document.getElementById(sectionId).style.display = 'block';
@@ -145,6 +147,15 @@
             // Special case: Load members if list is shown
             if (sectionId === 'memberListSection') {
                 loadMembers();
+            }
+             // Special case: Load config if female passcode is shown
+            if (sectionId === 'femalePasscodeSection') {
+                // Ensure the latest loaded value is displayed
+                 if(femalePasscodeLocal !== null) {
+                    document.getElementById('currentFemalePasscodeDisplay').value = femalePasscodeLocal || '(No Passcode Set)';
+                 } else {
+                    fetchAdminPassword(); // Fetch all config including female pass
+                 }
             }
             // Scroll to the top of the container
             document.querySelector('.container').scrollIntoView({ behavior: 'smooth' });
@@ -167,7 +178,8 @@
             renderMemberTable(data);
             populateParentSelects();
         }
-
+        
+        // (Render Member Table function remains the same)
         function renderMemberTable(members) {
             const tableBody = document.getElementById('memberTableBody');
             tableBody.innerHTML = ''; 
@@ -193,27 +205,21 @@
             });
         }
         
+        // (Populate Parent/Spouse Selects function remains the same)
         function populateParentSelects(currentParentId = null, currentSpouseId = null) {
             const parentSelect = document.getElementById('parentID');
             const spouseSelect = document.getElementById('spouseID');
             
-            // Clear existing options, keep the default one
             parentSelect.innerHTML = '<option value="">(Optional) No Parent / Root Member</option>';
             spouseSelect.innerHTML = '<option value="">(Optional) No Spouse / External Spouse</option>';
             
             allMembers.forEach(member => {
-                // Populate Parent Select
                 const parentOption = new Option(member.full_name, member.id);
-                if (member.id === currentParentId) {
-                    parentOption.selected = true;
-                }
+                if (member.id === currentParentId) { parentOption.selected = true; }
                 parentSelect.add(parentOption);
                 
-                // Populate Spouse Select
                 const spouseOption = new Option(member.full_name, member.id);
-                if (member.id === currentSpouseId) {
-                    spouseOption.selected = true;
-                }
+                if (member.id === currentSpouseId) { spouseOption.selected = true; }
                 spouseSelect.add(spouseOption);
             });
         }
@@ -224,8 +230,8 @@
             editingMemberId = null;
             document.getElementById('memberFormTitle').innerText = 'Add New Member';
             document.getElementById('memberFormSubmit').innerText = 'Add Member';
-            populateParentSelects(); // Clear selections
-            showSection('memberManagementSection'); // Show the form section
+            populateParentSelects(); 
+            showSection('memberManagementSection'); 
         }
 
         async function saveMember() {
@@ -241,6 +247,8 @@
                 parent_id: document.getElementById('parentID').value || null,
                 spouse_id: document.getElementById('spouseID').value || null,
                 spouse_external_name: document.getElementById('spouseExternalName').value.trim() || null,
+                // Member Passcode: Saves as null if empty (Allowing removal)
+                member_password: document.getElementById('memberPassword').value.trim() || null,
             };
 
             // Basic Validation
@@ -293,11 +301,15 @@
 
             // Populate Parent/Spouse selects with current values selected
             populateParentSelects(member.parent_id, member.spouse_id);
+
+            // Clear member password field on edit for security
+            document.getElementById('memberPassword').value = '';
             
             // Show the form section
             showSection('memberManagementSection');
         }
         
+        // (Delete Member function remains the same)
         async function deleteMember(memberId) {
             if (confirm(`Are you sure you want to delete member ID ${memberId}? This cannot be undone.`)) {
                 const { error } = await _supabase.from('family_data').delete().eq('id', memberId);
@@ -308,15 +320,16 @@
                     alert('Member deleted successfully!');
                     loadMembers(); 
                     if (editingMemberId === memberId) {
-                        setupMemberForm(); // Clear form if the deleted member was being edited
+                        setupMemberForm();
                     }
                 }
             }
         }
         
-        // --- SITE SETTINGS MANAGEMENT ---
+        // --- SITE SETTINGS MANAGEMENT (Updated to fetch female_pass) ---
         async function loadSiteConfig() {
-            const { data, error } = await _supabase.from('site_config').select('*').limit(1);
+            // Fetch female_pass alongside other settings
+            const { data, error } = await _supabase.from('site_config').select('*, female_pass, "female-pass"').limit(1);
             if (error) {
                 console.error("Error loading site config:", error);
                 return;
@@ -329,13 +342,19 @@
                 document.getElementById('phoneNum').value = config.phone || '';
                 document.getElementById('whatsappNum').value = config.whatsapp || '';
                 document.getElementById('features').value = config.features || '';
+                
+                // Load female passcode and store it locally
+                femalePasscodeLocal = config.female_pass || config['female-pass'] || null; 
+                if (document.getElementById('currentFemalePasscodeDisplay')) {
+                    document.getElementById('currentFemalePasscodeDisplay').value = femalePasscodeLocal || '(No Passcode Set)';
+                }
             } else {
-                 // If no config exists, initialize the ID with the first insert
                  console.log("No site config found, ready for first save.");
             }
             settingsLoaded = true;
         }
 
+        // (Save Site Config function remains the same)
         async function saveSiteConfig() {
             if (!settingsLoaded) {
                  alert("Settings not fully loaded yet. Please wait.");
@@ -355,10 +374,8 @@
             let result;
 
             if (existing && existing.length > 0) {
-                // Update existing record
                 result = await _supabase.from('site_config').update(configData).eq('id', existing[0].id);
             } else {
-                // Insert new record
                 result = await _supabase.from('site_config').insert([configData]);
             }
             
@@ -366,11 +383,11 @@
                 alert('Error saving site configuration: ' + result.error.message);
             } else {
                 alert('Site configuration saved successfully!');
-                loadSiteConfig(); // Reload to update hash for consistency
+                loadSiteConfig(); 
             }
         }
         
-        // --- PASSCODE MANAGEMENT ---
+        // --- ADMIN PASSCODE MANAGEMENT (Remains the same) ---
         async function changePasscode() {
             const currentPass = document.getElementById('currentPasscode').value;
             const newPass = document.getElementById('newPasscode').value;
@@ -403,7 +420,6 @@
             if (existing && existing.length > 0) {
                  result = await _supabase.from('site_config').update({ admin_password: newPass }).eq('id', existing[0].id);
             } else {
-                 // If site_config is empty, insert the new password
                  result = await _supabase.from('site_config').insert([{ admin_password: newPass }]);
             }
 
@@ -423,6 +439,63 @@
             // 3. Force logout
             logoutAdmin();
         }
+
+        // --- NEW: FEMALE PASSCODE MANAGEMENT (RE-ADDED & MODIFIED) ---
+        async function saveFemalePasscode() {
+            // Trim to handle whitespace input
+            const newPass = document.getElementById('newFemalePasscode').value.trim();
+            const confirmPass = document.getElementById('confirmFemalePasscode').value.trim();
+            
+            // Check if user is trying to set a new password
+            if (newPass) { 
+                if (newPass !== confirmPass) {
+                    alert("New Passcode and Confirm Passcode do not match.");
+                    return;
+                }
+            } else {
+                // If newPass is empty, user intends to remove/clear it.
+                if (confirmPass) {
+                     alert("To remove the passcode, both 'New Passcode' and 'Confirm New Passcode' fields must be empty.");
+                     return;
+                }
+                // If both are empty, proceed to set to null
+            }
+
+            // Determine the value to save (null if empty, or the newPass value)
+            const passcodeToSave = newPass || null;
+            
+            // 1. Update the female passcode in the database
+            const { data: existing } = await _supabase.from('site_config').select('id').limit(1);
+            let result;
+            
+            // Use 'female_pass' as the target column name for saving
+            const updateData = { female_pass: passcodeToSave }; 
+            
+            if (existing && existing.length > 0) {
+                 result = await _supabase.from('site_config').update(updateData).eq('id', existing[0].id);
+            } else {
+                 // If site_config is empty, insert the new female password
+                 result = await _supabase.from('site_config').insert([updateData]);
+            }
+
+            if (result.error) {
+                alert(`Error updating female passcode in DB: ${result.error.message}`);
+                return;
+            }
+            
+            // 2. Update local variable and clear fields
+            femalePasscodeLocal = passcodeToSave;
+            document.getElementById('currentFemalePasscodeDisplay').value = passcodeToSave || '(No Passcode Set)';
+            document.getElementById('newFemalePasscode').value = '';
+            document.getElementById('confirmFemalePasscode').value = '';
+
+            if (passcodeToSave) {
+                alert("Female Detail Passcode successfully changed and saved to Supabase!");
+            } else {
+                alert("Female Detail Passcode successfully REMOVED (cleared) from Supabase!");
+            }
+        }
+
 
         // --- Initialization ---
         document.addEventListener('DOMContentLoaded', checkLoginStatus);
@@ -512,15 +585,15 @@
             background-color: #2980b9;
         }
 
-        /* Adjust button layout for wider screens */
+        /* Adjust button layout for wider screens (5 buttons: 19% each) */
         @media (min-width: 600px) {
             .admin-nav-button-container {
                 flex-direction: row;
                 flex-wrap: wrap;
-                justify-content: space-around;
+                justify-content: space-between;
             }
             .admin-nav-button {
-                width: 30%; /* Three buttons per row */
+                width: 19%; 
             }
         }
         
@@ -592,12 +665,9 @@
             .form-grid.two-col {
                 grid-template-columns: repeat(2, 1fr);
             }
-            .form-grid.two-col > div:nth-child(5),
-            .form-grid.two-col > div:nth-child(6) {
-                grid-column: span 1;
-            }
-            .form-grid.two-col > div:nth-child(7) {
-                grid-column: span 2;
+            /* Adjustments for the member form to look good */
+            #memberManagementSection .form-grid.three-col > div:nth-child(7) {
+                grid-column: 1 / -1; /* Member Passcode takes full width */
             }
         }
         
@@ -652,6 +722,14 @@
         }
         .admin-actions .edit-btn { background-color: #3498db; color: white; }
         .admin-actions .delete-btn { background-color: #e74c3c; color: white; }
+        
+        /* New Passcode Section Specific Styles */
+        .read-only-input {
+            background-color: #f0f0f0;
+            font-weight: 700;
+            color: #34495e;
+            cursor: default;
+        }
     </style>
 </head>
 <body>
@@ -678,7 +756,8 @@
             <button class="admin-nav-button" onclick="setupMemberForm()"><i class="fa-solid fa-user-plus"></i> Add/Edit Member</button>
             <button class="admin-nav-button" onclick="showSection('memberListSection')"><i class="fa-solid fa-list-ul"></i> View Member List</button>
             <button class="admin-nav-button" onclick="showSection('siteSettingsSection')"><i class="fa-solid fa-gear"></i> Site Settings</button>
-            <button class="admin-nav-button" onclick="showSection('passcodeSection')"><i class="fa-solid fa-lock"></i> Change Passcode</button>
+            <button class="admin-nav-button" onclick="showSection('passcodeSection')"><i class="fa-solid fa-lock"></i> Admin Passcode</button>
+            <button class="admin-nav-button" onclick="showSection('femalePasscodeSection')"><i class="fa-solid fa-user-shield"></i> Female Passcode</button>
         </div>
 
         <div class="admin-section" id="memberManagementSection">
@@ -712,6 +791,10 @@
                     <div>
                         <label for="imageURL">Image URL</label>
                         <input type="url" id="imageURL">
+                    </div>
+                    <div style="grid-column: 1 / -1;">
+                        <label for="memberPassword">Member Passcode (Optional)</label>
+                        <input type="password" id="memberPassword" placeholder="Keep empty to remove/set no passcode">
                     </div>
                 </div>
                 
@@ -818,6 +901,33 @@
                     </div>
                 </div>
                 <button type="submit" class="submit-btn">Change Passcode</button>
+            </form>
+        </div>
+
+        <div class="admin-section" id="femalePasscodeSection">
+            <h2><i class="fa-solid fa-user-shield"></i> Female Detail Passcode Management</h2>
+            <form onsubmit="event.preventDefault(); saveFemalePasscode()" class="admin-form">
+                <p style="color: #555; font-size: 14px; margin-top: -10px;">
+                    یہ پاس کوڈ خواتین کی تفصیلات دیکھنے کے لیے استعمال ہو گا جو عوامی سائٹ پر درج کیا جاتا ہے۔
+                </p>
+                
+                 <div class="form-grid three-col">
+                    <div>
+                        <label for="currentFemalePasscodeDisplay">Current Passcode</label>
+                        <input type="text" id="currentFemalePasscodeDisplay" class="read-only-input" readonly value="(Loading...)" title="Current Passcode is loaded from Supabase.">
+                    </div>
+                    <div>
+                        <label for="newFemalePasscode">New Passcode</label>
+                        <input type="password" id="newFemalePasscode" placeholder="Enter New Passcode (Leave empty to remove)">
+                    </div>
+                    <div>
+                        <label for="confirmFemalePasscode">Confirm New Passcode</label>
+                        <input type="password" id="confirmFemalePasscode" placeholder="Confirm New Passcode (Leave empty to remove)">
+                    </div>
+                </div>
+                <button type="submit" class="submit-btn" style="background-color: #e67e22;">
+                    <i class="fa-solid fa-floppy-disk"></i> Save / Remove Female Passcode
+                </button>
             </form>
         </div>
         

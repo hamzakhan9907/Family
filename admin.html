@@ -16,8 +16,12 @@
         const _supabase = supabase.createClient(supabaseUrl, SUPABASE_ANON_KEY);
         
         // --- ADDED SESSION CONSTANT (FIXED: 1 HOUR) ---
-        const SESSION_TIMEOUT_MS = 60 * 1000; // 60 minutes (1 hour) in milliseconds
+        const SESSION_TIMEOUT_MS = 60 * 60 * 1000; // 60 minutes (1 hour) in milliseconds
         // ----------------------------------------------
+
+        // --- NEW CONSTANT FOR STORAGE (Using user's bucket name) ---
+        const MEMBER_BUCKET = 'shajra-photos'; 
+        // -----------------------------------------------------------
 
         // --- DB-DRIVEN ADMIN PASSCODE ---
         let adminPasswordHash = null; // Password will be fetched from DB
@@ -116,7 +120,7 @@
             }
         }
 
-        // --- ADMIN LOGIN FUNCTION (WAS MISSING) ---
+        // --- ADMIN LOGIN FUNCTION ---
         async function loginAdmin() {
             const passcode = document.getElementById('passcode').value;
             
@@ -231,38 +235,106 @@
             });
         }
         
+        // --- NEW IMAGE HELPER FUNCTIONS ---
+        function resetImageFields() {
+            document.getElementById('imageUpload').value = '';
+            document.getElementById('existingImageURL').value = '';
+            document.getElementById('imagePreviewContainer').style.display = 'none';
+            document.getElementById('currentImagePreview').src = '';
+            document.getElementById('imageStatus').innerText = 'Current Image: ';
+        }
+
+        // Function to mark image for removal/clearing
+        function removeImage() {
+            if (confirm('Are you sure you want to remove the current image?')) {
+                // Set a special value to indicate deletion
+                document.getElementById('existingImageURL').value = 'REMOVE_IMAGE'; 
+                document.getElementById('imagePreviewContainer').style.display = 'none';
+                alert('Image marked for removal on next save. Please click "Save Changes" now.');
+            }
+        }
+        // ------------------------------------
+
         function setupMemberForm() {
             const form = document.getElementById('memberForm');
             form.reset();
             editingMemberId = null;
             document.getElementById('memberFormTitle').innerText = 'Add New Member';
             document.getElementById('memberFormSubmit').innerText = 'Add Member';
+            
+            // NEW: Reset relation to default and call image reset
+            document.getElementById('relation').value = ''; 
+            resetImageFields(); 
+            
             populateParentSelects(); 
             showSection('memberManagementSection'); 
         }
 
         async function saveMember() {
-            const form = document.getElementById('memberForm');
+            const imageFile = document.getElementById('imageUpload').files[0];
+            let imageURLToSave = document.getElementById('existingImageURL').value; 
+            
+            const fullName = document.getElementById('fullName').value.trim();
+
+            // Basic Validation
+            if (!fullName) {
+                alert("Full Name is required.");
+                return;
+            }
+
+            // --- 1. HANDLE IMAGE UPLOAD/DELETION ---
+            if (imageURLToSave === 'REMOVE_IMAGE') {
+                // Image marked for removal
+                imageURLToSave = null; 
+            } else if (imageFile) {
+                // New image uploaded
+                const fileExtension = imageFile.name.split('.').pop();
+                // Create a unique filename based on ID or timestamp and name
+                const baseName = fullName.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 50);
+                const fileName = `${editingMemberId || Date.now()}-${baseName}.${fileExtension}`;
+                
+                // Upload to Supabase Storage
+                const { data: uploadData, error: uploadError } = await _supabase.storage
+                    .from(MEMBER_BUCKET)
+                    .upload(fileName, imageFile, {
+                        cacheControl: '3600',
+                        upsert: true 
+                    });
+
+                if (uploadError) {
+                    alert('Image upload failed: ' + uploadError.message);
+                    return; 
+                }
+                
+                // Get the public URL of the uploaded file
+                const { data: publicUrlData } = _supabase.storage
+                    .from(MEMBER_BUCKET)
+                    .getPublicUrl(fileName);
+                    
+                imageURLToSave = publicUrlData.publicUrl;
+                
+            } else if (editingMemberId && imageURLToSave) {
+                // Editing existing member, no new file, URL remains the same
+            } else {
+                 // No file and no existing URL
+                 imageURLToSave = null;
+            }
+            // ------------------------------------------
+
             const memberData = {
-                full_name: document.getElementById('fullName').value.trim() || null,
-                relation: document.getElementById('relation').value.trim() || null,
+                full_name: fullName,
+                relation: document.getElementById('relation').value.trim() || null, 
                 gender: document.getElementById('gender').value || null,
                 dob: document.getElementById('dob').value || null,
                 phone: document.getElementById('phone').value.trim() || null,
-                image_url: document.getElementById('imageURL').value.trim() || null,
+                image_url: imageURLToSave, // FINAL Image URL
                 is_alive: document.getElementById('isAlive').checked,
                 parent_id: document.getElementById('parentID').value || null,
                 spouse_id: document.getElementById('spouseID').value || null,
                 spouse_external_name: document.getElementById('spouseExternalName').value.trim() || null,
-                // Member Passcode: Saves as null if empty (Allowing removal)
                 member_password: document.getElementById('memberPassword').value.trim() || null,
             };
 
-            // Basic Validation
-            if (!memberData.full_name) {
-                alert("Full Name is required.");
-                return;
-            }
 
             let result;
             if (editingMemberId) {
@@ -298,13 +370,22 @@
             
             // Populate form fields
             document.getElementById('fullName').value = member.full_name || '';
-            document.getElementById('relation').value = member.relation || '';
+            document.getElementById('relation').value = member.relation || ''; 
             document.getElementById('gender').value = member.gender || '';
             document.getElementById('dob').value = member.dob || '';
             document.getElementById('phone').value = member.phone || '';
-            document.getElementById('imageURL').value = member.image_url || '';
             document.getElementById('isAlive').checked = member.is_alive === true;
             document.getElementById('spouseExternalName').value = member.spouse_external_name || '';
+
+            // --- NEW: Handle Image Preview and Existing URL ---
+            resetImageFields(); // Pehle reset karein
+            if (member.image_url) {
+                document.getElementById('existingImageURL').value = member.image_url;
+                document.getElementById('currentImagePreview').src = member.image_url;
+                document.getElementById('imageStatus').innerText = 'Current Image: ' + member.image_url.split('/').pop().substring(0, 20) + '...';
+                document.getElementById('imagePreviewContainer').style.display = 'flex';
+            }
+            // ----------------------------------------------------
 
             // Populate Parent/Spouse selects with current values selected
             populateParentSelects(member.parent_id, member.spouse_id);
@@ -447,7 +528,7 @@
             logoutAdmin();
         }
 
-        // --- NEW: FEMALE PASSCODE MANAGEMENT (RE-ADDED & MODIFIED) ---
+        // --- FEMALE PASSCODE MANAGEMENT (RE-ADDED & MODIFIED) ---
         async function saveFemalePasscode() {
             // Trim to handle whitespace input
             const newPass = document.getElementById('newFemalePasscode').value.trim();
@@ -776,8 +857,15 @@
                         <input type="text" id="fullName" required>
                     </div>
                     <div>
-                        <label for="relation">Relation (e.g., Son, Daughter)</label>
-                        <input type="text" id="relation">
+                        <label for="relation">Relation</label>
+                        <select id="relation">
+                            <option value="">-- Select Relation --</option>
+                            <option value="Son">Son</option>
+                            <option value="Daughter">Daughter</option>
+                            <option value="Wife">Wife</option>
+                            <option value="Husband">Husband</option>
+                            <option value="Self">Self (Root)</option>
+                        </select>
                     </div>
                     <div>
                         <label for="gender">Gender</label>
@@ -795,10 +883,21 @@
                         <label for="phone">Phone/Contact</label>
                         <input type="text" id="phone">
                     </div>
+                    
                     <div>
-                        <label for="imageURL">Image URL</label>
-                        <input type="url" id="imageURL">
+                        <label for="imageUpload">Member Image Upload</label>
+                        <input type="file" id="imageUpload" accept="image/*">
                     </div>
+                    
+                    <div style="grid-column: 1 / -1;">
+                        <div id="imagePreviewContainer" style="margin-top: 15px; display: none; align-items: center; gap: 15px;">
+                            <img id="currentImagePreview" src="" alt="Current Image" style="max-width: 100px; max-height: 100px; border-radius: 8px;">
+                            <div>
+                                <span id="imageStatus" style="font-size: 12px; color: #555; display: block; margin-bottom: 5px;">Current Image: </span>
+                                <button type="button" onclick="removeImage()" id="removeImageBtn" style="background-color: #e74c3c; color: white; padding: 5px 10px; border: none; border-radius: 4px; font-size: 12px; cursor: pointer;">Remove Current Image</button>
+                            </div>
+                        </div>
+                        <input type="hidden" id="existingImageURL" value=""> </div>
                     <div style="grid-column: 1 / -1;">
                         <label for="memberPassword">Member Passcode (Optional)</label>
                         <input type="password" id="memberPassword" placeholder="Keep empty to remove/set no passcode">

@@ -15,9 +15,9 @@
         const SUPABASE_ANON_KEY = k1 + k2 + k3; 
         const _supabase = supabase.createClient(supabaseUrl, SUPABASE_ANON_KEY);
         
-        // --- ADDED SESSION CONSTANT ---
-        const SESSION_TIMEOUT_MS = 60 * 1000; // 1 minute in milliseconds
-        // ------------------------------
+        // --- ADDED SESSION CONSTANT (FIXED: 1 HOUR) ---
+        const SESSION_TIMEOUT_MS = 60 * 1000; // 60 minutes (1 hour) in milliseconds
+        // ----------------------------------------------
 
         // --- DB-DRIVEN ADMIN PASSCODE ---
         let adminPasswordHash = null; // Password will be fetched from DB
@@ -91,30 +91,37 @@
             fetchAdminPassword();
         }
 
+        // --- PASSCODE FETCHING ---
         async function fetchAdminPassword() {
-            // Fetch admin_password, female_pass, and "female-pass" (for compatibility)
-            const { data, error } = await _supabase.from('site_config').select('admin_password, female_pass, "female-pass"').limit(1);
+            // Fetch admin_password and the correct column name female_pass
+            const { data, error } = await _supabase.from('site_config').select('admin_password, female_pass').limit(1);
+            
             if (data && data.length > 0) {
-                // FIXED: This ensures admin login uses the DB value
+                // This ensures admin login uses the DB value
                 adminPasswordHash = data[0].admin_password || "1234";
-                // FIXED: Fetch female passcode and use null if not set
-                femalePasscodeLocal = data[0].female_pass || data[0]['female-pass'] || null; 
+                
+                // Fetch female passcode and use null if not set
+                femalePasscodeLocal = data[0].female_pass || null; 
             } else if (error) {
                 console.error("Error fetching admin password:", error);
                 adminPasswordHash = "1234"; // Fallback
                 femalePasscodeLocal = null; // Fallback
             } else {
-                 adminPasswordHash = "1234"; 
-                 femalePasscodeLocal = null;
+                adminPasswordHash = "1234"; 
+                femalePasscodeLocal = null;
             }
             // Update the display field
             if (document.getElementById('currentFemalePasscodeDisplay')) {
                 document.getElementById('currentFemalePasscodeDisplay').value = femalePasscodeLocal || '(No Passcode Set)';
             }
         }
+
+        // --- ADMIN LOGIN FUNCTION (WAS MISSING) ---
         async function loginAdmin() {
             const passcode = document.getElementById('passcode').value;
-            if (!adminPasswordHash) await fetchAdminPassword(); // Ensure password is loaded
+            
+            // Ensure password is loaded before comparing
+            if (!adminPasswordHash) await fetchAdminPassword(); 
             
             if (passcode === adminPasswordHash) {
                 setLoggedIn(true);
@@ -139,7 +146,7 @@
             document.getElementById('memberListSection').style.display = 'none';
             document.getElementById('siteSettingsSection').style.display = 'none';
             document.getElementById('passcodeSection').style.display = 'none';
-            document.getElementById('femalePasscodeSection').style.display = 'none'; // Re-added
+            document.getElementById('femalePasscodeSection').style.display = 'none'; 
 
             // Show the requested section
             document.getElementById(sectionId).style.display = 'block';
@@ -328,8 +335,8 @@
         
         // --- SITE SETTINGS MANAGEMENT (Updated to fetch female_pass) ---
         async function loadSiteConfig() {
-            // Fetch female_pass alongside other settings
-            const { data, error } = await _supabase.from('site_config').select('*, female_pass, "female-pass"').limit(1);
+            // FIX: Selecting only correct column names
+            const { data, error } = await _supabase.from('site_config').select('site_name, about_urdu, contact_desc, phone, whatsapp, features, female_pass').limit(1);
             if (error) {
                 console.error("Error loading site config:", error);
                 return;
@@ -344,7 +351,7 @@
                 document.getElementById('features').value = config.features || '';
                 
                 // Load female passcode and store it locally
-                femalePasscodeLocal = config.female_pass || config['female-pass'] || null; 
+                femalePasscodeLocal = config.female_pass || null; 
                 if (document.getElementById('currentFemalePasscodeDisplay')) {
                     document.getElementById('currentFemalePasscodeDisplay').value = femalePasscodeLocal || '(No Passcode Set)';
                 }

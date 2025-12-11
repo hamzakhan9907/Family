@@ -863,16 +863,24 @@ let isHorizontal = false; // NEW: Track view state for Horizontal/Vertical toggl
 let currentSortColumn = 'full_name';
 let currentSortDirection = 'asc';
 
-// NEW: Function to mask female names (e.g., Maryam -> Ma****)
+// Function to mask female names (e.g., Maryam -> Ma****)
 function maskFemaleName(fullName, gender) {
+    
+    // Check 1: If it's female
     if (gender && gender.toLowerCase() === 'f') {
-        if (!fullName || fullName.length < 2) return 'F-****';
-        // Take the first two characters (case insensitive)
-        const firstTwo = fullName.substring(0, 2);
-        // Mask the rest of the characters
-        const maskedPart = '*'.repeat(fullName.length - 2);
-        return firstTwo + maskedPart;
+        
+        // Check 2: Mask ONLY if a password is set. 
+        // Agar femalePasscode NULL hai (ya empty string), toh masking nahi hogi.
+        if (femalePasscode) { 
+            if (!fullName || fullName.length < 2) return 'F-****';
+            // Take the first two characters (case insensitive)
+            const firstTwo = fullName.substring(0, 2);
+            // Mask the rest of the characters
+            const maskedPart = '*'.repeat(fullName.length - 2);
+            return firstTwo + maskedPart;
+        }
     }
+    // Agar male hai ya female hai par password set nahi hai, toh poora naam return karein
     return fullName;
 }
 
@@ -1441,24 +1449,23 @@ async function openMemberDetail(memberId) {
     checkAndLoadDetail(data);
 }
 
-// MODIFIED checkAndLoadDetail function to use the custom modal
+// MODIFIED checkAndLoadDetail function to use the custom modal function
 function checkAndLoadDetail(data) {
     const modalContentArea = document.getElementById('modalContentArea');
-    
+
     // 1. Prepare loading state (in the detail modal behind the passcode modal)
     modalContentArea.innerHTML = `<div style="font-size:18px; color:#555; padding-top:10px;"><i class="fa-solid fa-spinner fa-spin"></i> Loading Data for ID: ${data.id}...</div>`;
-    
-    // 2. Check if the member is female
-    if (data.gender && data.gender.toLowerCase() === 'f') {
-        
-        // **NEW:** Open the stylish passcode modal
-        openPasscodeModal(data);
 
+    // 2. Check if the member is female AND if a passcode is set.
+    // FIX 3: Added '&& femalePasscode' condition to bypass password if not set
+    if (data.gender && data.gender.toLowerCase() === 'f' && femalePasscode) { 
+        // Passcode is set, open the stylish passcode modal
+        openPasscodeModal(data);
     } else {
-        // Male member, open directly
+        // Male member, OR Female member with no required passcode, open directly
         // Display the detail modal and render content
         document.getElementById("detailModal").style.display = "flex";
-        renderAndShowDetailModal(data);
+        renderAndShowDetailModal(data); // 'data' is now guaranteed to be complete
     }
 }
 // --- END Detail Modal Logic ---
@@ -1718,30 +1725,34 @@ async function calcStats() {
 }
 
 async function loadSiteSettings() {
-    // Select all columns to ensure 'female-pass' is fetched
-    const { data } = await _supabase.from('site_config').select('*').limit(1); 
-    
-    if(data?.[0]){
-        // Store the passcode fetched from the database column 'female-pass'
-        femalePasscode = data[0]['female-pass'] || data[0].female_pass || '1234'; 
-        
-        // Existing settings logic
-        document.getElementById('mainTitle').innerText=data[0].site_name;
-        document.getElementById('dynamicUrduText').innerText=data[0].about_urdu;
-        document.getElementById('dynamicAboutText').innerText=data[0].contact_desc;
-        document.getElementById('dynamicPhone').innerText=data[0].phone;
-        document.getElementById('dynamicWhatsapp').href = `https://wa.me/${data[0].whatsapp.replace(/[^0-9+]/g, '')}`;
-        document.getElementById('featuresList').innerHTML=(data[0].features||"").split(',').map(f=>`<li>${f}</li>`).join('');
-    }
+    // Select all columns to ensure 'female-pass' is fetched
+    const { data } = await _supabase.from('site_config').select('*').limit(1); 
+    
+    if(data?.[0]){
+        // Store the passcode fetched from the database column 'female-pass'
+        femalePasscode = data[0]['female-pass'] || data[0].female_pass || null; 
+        
+        // Existing settings logic
+        document.getElementById('mainTitle').innerText=data[0].site_name;
+        document.getElementById('dynamicUrduText').innerText=data[0].about_urdu;
+        document.getElementById('dynamicAboutText').innerText=data[0].contact_desc;
+        document.getElementById('dynamicPhone').innerText=data[0].phone;
+        document.getElementById('dynamicWhatsapp').href = `https://wa.me/${data[0].whatsapp.replace(/[^0-9+]/g, '')}`;
+        document.getElementById('featuresList').innerHTML=(data[0].features||"").split(',').map(f=>`<li>${f}</li>`).join('');
+    } else {
+        // Fix for loading issue when site_config is empty
+        document.getElementById('mainTitle').innerText = 'Family Shajra';
+        femalePasscode = null; 
+    }
 }
 
 // ----------------------------------------------------
 // *** DOMContentLoaded: Best Practice Initialization ***
 // ----------------------------------------------------
 document.addEventListener('DOMContentLoaded', () => {
-    loadSiteSettings();
-    loadRootMembers(); 
-    setupSortListeners(); // Setup listeners for the new sortable table header
+    loadSiteSettings();
+    loadRootMembers(); 
+    setupSortListeners(); 
 });
 </script>
 </body>

@@ -841,7 +841,7 @@
 
     <div class="container">
         <div class="admin-nav-button-container">
-            <button class="admin-nav-button" onclick="setupMemberForm()"><i class="fa-solid fa-user-plus"></i> Add/Edit Member</button>
+            <button class="admin-nav-button" onclick="setupMemberForm()"><i class="fa-solid fa-user-plus"></i> Naya Member Add</button>
             <button class="admin-nav-button" onclick="showSection('memberListSection')"><i class="fa-solid fa-list-ul"></i> View Member List</button>
             <button class="admin-nav-button" onclick="showSection('siteSettingsSection')"><i class="fa-solid fa-gear"></i> Site Settings</button>
             <button class="admin-nav-button" onclick="showSection('passcodeSection')"><i class="fa-solid fa-lock"></i> Admin Passcode</button>
@@ -885,7 +885,7 @@
                     </div>
                     
                     <div>
-                        <label for="imageUpload">Member Image Upload</label>
+                        <label for="imageUpload">Member ki Image Upload krain</label>
                         <input type="file" id="imageUpload" accept="image/*">
                     </div>
                     
@@ -906,26 +906,26 @@
                 
                 <div class="form-grid two-col" style="margin-top: 10px;">
                     <div>
-                        <label for="parentID">Parent Member ID</label>
+                        <label for="parentID">Member K Walid kn hain</label>
                         <select id="parentID">
                             <option value="">(Optional) No Parent / Root Member</option>
                         </select>
                     </div>
                     <div>
-                        <label for="spouseID">Spouse Member ID (if in system)</label>
+                        <label for="spouseID"> Member ki wife (if in system)</label>
                         <select id="spouseID">
                             <option value="">(Optional) No Spouse / External Spouse</option>
                         </select>
                     </div>
                     <div style="grid-column: 1 / -1;">
-                        <label for="spouseExternalName">External Spouse Name (Manual)</label>
+                        <label for="spouseExternalName">wife ka Name (Manual)</label>
                         <input type="text" id="spouseExternalName">
                     </div>
                 </div>
 
                 <div class="checkbox-group">
                     <input type="checkbox" id="isAlive" checked>
-                    <label for="isAlive">Is Alive?</label>
+                    <label for="isAlive">Zainda ha?</label>
                 </div>
                 
                 <button type="submit" id="memberFormSubmit" class="submit-btn">Add Member</button>

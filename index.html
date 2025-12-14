@@ -19,6 +19,14 @@ const _supabase = supabase.createClient(supabaseUrl, SUPABASE_ANON_KEY);
 let femalePasscode = null; 
 // NEW: Global variable to store member data pending password verification
 let tempMemberData = null; 
+
+// --- NEW: Search & Tree Globals for faster interaction ---
+let allMembersData = []; 
+let currentRootId = null; 
+let isHorizontal = false; 
+// NEW Global Sort State for All Members Table
+let currentSortColumn = 'full_name'; 
+let currentSortDirection = 'asc'; 
 </script>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -80,6 +88,74 @@ header { background-color: #2c3e50; padding:10px 15px; display:flex; justify-con
 }
 .search-close-btn:hover {
     background: #c0392b;
+}
+
+/* ---------------------------------------------------------------------------------- */
+/* ---------- NEW: Search Results Dropdown Styles ---------- */
+/* ---------------------------------------------------------------------------------- */
+.search-results-container {
+    position: absolute; 
+    top: 95px; /* Adjust based on header+navbar+search height */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 400px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 0 0 8px 8px; /* Rounded bottom */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    z-index: 999; 
+    max-height: 300px;
+    overflow-y: auto;
+}
+.search-result-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background-color 0.2s;
+    text-align: left;
+}
+.search-result-item:hover {
+    background-color: #f0f7ff;
+}
+.search-result-item:last-child {
+    border-bottom: none;
+}
+.result-info {
+    flex-grow: 1;
+    margin-left: 10px;
+}
+.result-name {
+    font-weight: 700;
+    color: #2c3e50;
+    font-size: 14px;
+    line-height: 1.2;
+}
+.result-parent {
+    font-size: 11px;
+    color: #7f8c8d;
+    margin-top: 2px;
+}
+.result-icon {
+    font-size: 16px;
+    color: #3498db;
+    width: 20px;
+    text-align: center;
+}
+
+/* ---------------------------------------------------------------------------------- */
+/* ---------- NEW: Highlighting Effect ---------- */
+/* ---------------------------------------------------------------------------------- */
+.highlighted-member {
+    animation: highlightPulse 0.5s 10 alternate; /* 5 seconds total (10 alternating pulses) */
+    border-color: #e67e22 !important; 
+    box-shadow: 0 0 15px rgba(230, 126, 34, 0.8) !important;
+}
+@keyframes highlightPulse {
+    from { box-shadow: 0 0 15px rgba(230, 126, 34, 0.8) !important; }
+    to { box-shadow: 0 0 5px rgba(230, 126, 34, 0.2) !important; }
 }
 
 
@@ -159,8 +235,9 @@ header { background-color: #2c3e50; padding:10px 15px; display:flex; justify-con
 
 
 /* ---------------------------------------------------------------------------------- */
-/* ---------- ANALYTICS MODAL SPECIFIC STYLES ----- */
+/* ---------- ANALYTICS MODAL SPECIFIC STYLES (FIXED) ----- */
 /* ---------------------------------------------------------------------------------- */
+#analyticsModal .shajra-modal-content { max-width: 380px; } /* Enforce size */
 .analytics-stats-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -173,14 +250,14 @@ header { background-color: #2c3e50; padding:10px 15px; display:flex; justify-con
     border-radius: 10px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
-.stat-number {
+.analytics-stat-card .stat-number { /* Added .analytics-stat-card to enforce specificity */
     display: block;
     font-size: 24px;
     font-weight: 800;
     color: #1e88e5;
     line-height: 1;
 }
-.stat-urdu {
+.analytics-stat-card .stat-urdu { /* Added .analytics-stat-card to enforce specificity */
     display: block;
     font-size: 11px;
     color: #555;
@@ -210,8 +287,9 @@ header { background-color: #2c3e50; padding:10px 15px; display:flex; justify-con
 
 
 /* ---------------------------------------------------------------------------------- */
-/* ---------- ABOUT MODAL SPECIFIC STYLES ----- */
+/* ---------- ABOUT MODAL SPECIFIC STYLES (FIXED) ----- */
 /* ---------------------------------------------------------------------------------- */
+#aboutModal .shajra-modal-content { max-width: 380px; } /* Enforce size */
 .about-urdu-text-style {
     font-family: 'Noto Nastaliq Urdu', serif;
     font-size: 16px;
@@ -227,7 +305,9 @@ header { background-color: #2c3e50; padding:10px 15px; display:flex; justify-con
     border-radius: 10px;
     margin-bottom: 20px;
     box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+    text-align: left; /* FIX: Added text-align: left; to keep content stable */
 }
+.about-contact-box-style p { margin: 5px 0; } /* FIX: Added to control paragraph spacing */
 .contact-whatsapp-btn-style {
     display: block;
     background: #25d366;
@@ -239,6 +319,7 @@ header { background-color: #2c3e50; padding:10px 15px; display:flex; justify-con
     margin-top: 15px;
     transition: background 0.3s;
     font-size: 14px;
+    text-align: center; /* FIX: Added to center button text */
 }
 .contact-whatsapp-btn-style:hover {
     background: #128c7e;
@@ -482,12 +563,24 @@ header { background-color: #2c3e50; padding:10px 15px; display:flex; justify-con
     font-size: 12px;
     width: 100%;
 }
-.shajra-view-toggle-container {
+
+/* NEW: Utility container for buttons and toggles */
+.shajra-utility-container {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    order: 3;
     flex-grow: 0;
-    max-width: 150px;
-    min-width: 30px; 
-    order: 3; 
-    text-align: right;
+    float: right;
+}
+.toggle-deceased-box {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 8px;
+    background: #34495e; /* Match navbar */
+    border-radius: 6px;
+    color: white;
 }
 #toggleViewBtn {
     background: #3498db;
@@ -503,10 +596,74 @@ header { background-color: #2c3e50; padding:10px 15px; display:flex; justify-con
     align-items: center;
     gap: 5px;
     white-space: nowrap;
-    float: right; 
 }
 #toggleViewBtn:hover {
     background: #2980b9;
+}
+
+/* NEW: Toggle Switch CSS */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 30px;
+  height: 17px;
+}
+.toggle-switch input { 
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 13px;
+  width: 13px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+input:checked + .slider {
+  background-color: #2ecc71;
+}
+input:focus + .slider {
+  box-shadow: 0 0 1px #2ecc71;
+}
+input:checked + .slider:before {
+  -webkit-transform: translateX(13px);
+  -ms-transform: translateX(13px);
+  transform: translateX(13px);
+}
+.slider.round {
+  border-radius: 17px;
+}
+.slider.round:before {
+  border-radius: 50%;
+}
+
+/* Deceased member style (Dimming and Hiding Logic) */
+.deceased-member {
+    opacity: 0.5; /* Always dim deceased members */
+    transition: opacity 0.3s;
+}
+.deceased-member:hover {
+    opacity: 1; /* Bring back opacity on hover */
+}
+/* Class applied to the main tree container to hide deceased members */
+.hide-deceased .deceased-member {
+    display: none !important; /* Hide them if class is applied to tree container */
 }
 
 /* For very small screens, adjust layout */
@@ -515,19 +672,29 @@ header { background-color: #2c3e50; padding:10px 15px; display:flex; justify-con
         flex-direction: column;
         align-items: stretch;
     }
-    .root-select-container, .shajra-view-toggle-container {
+    .root-select-container, .shajra-utility-container {
         max-width: 100%;
         margin-bottom: 10px;
         order: 1; 
+        justify-content: space-between;
     }
     .family-name-display {
         text-align: center;
         order: 3; 
         margin-top: 5px;
     }
-    #toggleViewBtn {
+    .shajra-utility-container {
         float: none;
         width: 100%;
+        justify-content: space-around;
+        gap: 5px;
+    }
+    #toggleViewBtn {
+        flex-grow: 1;
+        justify-content: center;
+    }
+    .toggle-deceased-box {
+        flex-grow: 1;
         justify-content: center;
     }
 }
@@ -602,73 +769,64 @@ header { background-color: #2c3e50; padding:10px 15px; display:flex; justify-con
     padding: 50px 10px; 
 }
 .shajra-horizontal-tree > ul { 
-    /* Root UL: Change flow to vertical stack */
-    flex-direction: column; 
-    align-items: flex-start;
-    padding-top: 0;
-}
-.shajra-horizontal-tree li {
-    /* Individual LI: Creates space for horizontal connection lines */
-    padding: 20px 0 20px 80px; 
-    text-align: left;
-    /* Reset vertical connectors */
-    height: auto !important; 
+    /* The root ul should be horizontal */
+    flex-direction: row; 
+    justify-content: flex-start;
+    padding-top: 0; 
+    margin: 0;
+    width: max-content; /* Allow content to dictate width */
 }
 .shajra-horizontal-tree ul ul {
-    /* Children UL: Stack children vertically, add vertical connector line */
+    /* All children ul should display children vertically, add vertical connector line */
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     position: relative;
-    padding-left: 40px; 
+    padding-left: 40px;
     border-left: 1px solid #8d6e63; /* Vertical line from parent generation to children */
     margin: 0;
     transition: none; /* Disable transition on UL to prevent odd rotation */
 }
 /* Clear standard vertical connectors */
-.shajra-horizontal-tree li::after, 
-.shajra-horizontal-tree li::before, 
-.shajra-horizontal-tree ul ul::before {
-    content: none !important; 
+.shajra-horizontal-tree li::after, .shajra-horizontal-tree li::before, .shajra-horizontal-tree ul ul::before {
+    content: none !important;
     border: none !important;
 }
 /* Horizontal line from the vertical line to the member card (li::before) */
-.shajra-horizontal-tree li::before { 
+.shajra-horizontal-tree li::before {
     content: '';
     position: absolute;
-    top: 50%; 
-    left: 0; 
+    top: 50%;
+    left: 0;
     border-top: 1px solid #8d6e63;
-    width: 40px; 
+    width: 40px;
     height: 0;
     transform: translateY(-50%);
 }
 /* Horizontal line segment 2 (from line to card) (li::after) */
-.shajra-horizontal-tree li::after { 
+.shajra-horizontal-tree li::after {
     content: '';
     position: absolute;
-    top: 50%; 
-    left: 40px; 
+    top: 50%;
+    left: 40px;
     border-top: 1px solid #8d6e63;
-    width: 40px; 
+    width: 40px;
     height: 0;
     transform: translateY(-50%);
 }
 /* Root node has no incoming lines */
-.shajra-horizontal-tree > ul > li::before,
-.shajra-horizontal-tree > ul > li::after {
-    content: none !important; 
+.shajra-horizontal-tree > ul > li::before, .shajra-horizontal-tree > ul > li::after {
+    content: none !important;
 }
 /* Reposition collapse button */
 .shajra-horizontal-tree .collapse-btn {
     top: 50%;
-    right: -25px; 
+    right: -25px;
     transform: translateY(-50%);
 }
 </style>
 </head>
 <body>
-
 <header>
     <div class="site-title" id="mainTitle">Loading...</div>
     <a href="admin.html" class="admin-btn"><i class="fa-solid fa-lock"></i> Admin</a>
@@ -679,84 +837,110 @@ header { background-color: #2c3e50; padding:10px 15px; display:flex; justify-con
     <button onclick="openAnalytics()" class="shajra-nav-btn"><i class="fa-solid fa-chart-pie"></i> Stats</button>
     <button onclick="openAbout()" class="shajra-nav-btn"><i class="fa-solid fa-circle-info"></i> About</button>
     <div class="shajra-dropdown">
-        <button onclick="toggleMenu()" class="shajra-nav-btn"><i class="fa-solid fa-bars-staggered"></i> More</button>
+        <button onclick="toggleMenu()" class="shajra-nav-btn"><i class="fa-solid fa-bars-staggered"></i> Menu</button>
         <div id="myDropdown" class="shajra-dropdown-menu">
-            <a onclick="openEvents()"><i class="fa-solid fa-calendar-check"></i> Events & Reminders</a> 
-            <a onclick="openAllMembersList()"><i class="fa-solid fa-users-line"></i> All Members</a> 
-            <a onclick="toggleSearch()"><i class="fa-solid fa-magnifying-glass"></i> Search</a>
-            <a onclick="openAbout()"><i class="fa-solid fa-headset"></i> Contact Us</a>
+            <a href="#" onclick="openAllMembers(event)"><i class="fa-solid fa-list-ul"></i> All Members</a>
+            <a href="#" onclick="handleSearchToggle(false)"><i class="fa-solid fa-magnifying-glass"></i> Search</a>
+            <a href="#" onclick="openEvents()"><i class="fa-solid fa-calendar-alt"></i> Events/Birthdays</a>
         </div>
     </div>
 </div>
 
-<div class="shajra-search-container" id="searchContainer" style="display: none;">
-    <input type="text" id="memberSearchInput" onkeyup="filterTree(this.value)" placeholder="🔍 نام سے تلاش کریں..." />
-    <button class="search-close-btn" onclick="toggleSearch(true)">
+<div id="searchContainer" class="shajra-search-container" style="display: none;">
+    <input type="text" id="memberSearchInput" placeholder="Search by Member Name (Full/Partial)..." onkeyup="handleSearchInput(this.value)">
+    <button class="search-close-btn" onclick="handleSearchToggle(true)">
         <i class="fa-solid fa-xmark"></i>
     </button>
 </div>
-
+<div id="searchResults" class="search-results-container" style="display: none;">
+    </div>
 
 <div class="heading-container">
     <div class="root-select-container">
         <select id="rootMemberSelect" onchange="loadFamilyTree(this.value)">
-            <option value="">-- فیملی کا انتخاب کریں --</option>
-        </select>
+            </select>
     </div>
-    <span class="family-name-display" id="currentFamilyName">
-        <i class="fa-solid fa-sitemap"></i> خاندانی شجرہ
-    </span>
-    <div class="shajra-view-toggle-container">
-        <button id="toggleViewBtn" onclick="toggleTreeView()">
-             <i class="fa-solid fa-arrows-left-right"></i> Horizontal View
+    <h1 class="family-name-display" id="currentFamilyName"><i class="fa-solid fa-sitemap"></i> Loading...</h1>
+    
+    <div class="shajra-utility-container">
+        <button id="toggleViewBtn" onclick="toggleView()">
+            <i class="fa-solid fa-expand"></i> Horizontal
         </button>
-    </div>
-</div>
-
-
-<div class="family-tree" id="visualTreeContainer">
-    <div style="color:#999; margin-top:50px;"><i class="fa-solid fa-spinner fa-spin"></i> فیملی لوڈ ہو رہی ہے...</div>
-</div>
-
-
-<div id="detailModal" class="shajra-modal-overlay">
-    <div class="shajra-modal-content">
-        <span class="shajra-modal-close-x" onclick="closeDetail()">&times;</span>
-        <div class="shajra-modal-title"><i class="fa-solid fa-user-circle"></i> ممبر تفصیل</div>
-        <div id="modalContentArea">
-            <div style="font-size:18px; color:#555;"><i class="fa-solid fa-spinner fa-spin"></i> Loading Data...</div>
+        <div class="toggle-deceased-box">
+            <label class="toggle-switch">
+                <input type="checkbox" id="deceasedToggle" onchange="toggleDeceasedVisibility(this.checked)" checked>
+                <span class="slider round"></span>
+            </label>
+            <span style="font-size: 12px; color: white;">Show Deceased</span>
         </div>
-        <button onclick="closeDetail()" class="shajra-modal-action-btn">Close</button>
+        </div>
+    </div>
+
+<div id="visualTreeContainer" class="family-tree">
+    </div>
+
+<div id="detailModal" class="shajra-modal-overlay" onclick="if (event.target === this) closeDetail()">
+    <div class="shajra-modal-content" style="max-width: 400px; padding: 15px;">
+        <span class="shajra-modal-close-x" onclick="closeDetail()">&times;</span>
+        <div id="modalContentArea">
+            <div style="text-align:center; padding:20px;"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</div>
+        </div>
     </div>
 </div>
 
-<div id="passcodeModal" class="shajra-modal-overlay" onclick="if(event.target.id === 'passcodeModal') closePasscodeModal();">
+<div id="passcodeModal" class="shajra-modal-overlay">
     <div class="shajra-modal-content">
         <span class="shajra-modal-close-x" onclick="closePasscodeModal()">&times;</span>
         <i class="fa-solid fa-user-shield passcode-icon"></i>
         <div class="shajra-modal-title" style="margin-bottom: 10px;">Security Check</div>
-        
         <div class="passcode-instruction">
             یہ ایک خاندانی عورت کی تفصیل ہے۔ تفصیل دیکھنے کے لیے پاس کوڈ درج کریں۔
         </div>
-        
         <input type="password" id="femalePasscodeInput" class="passcode-input" placeholder="Passcode Darj Karein..." onkeydown="if(event.key==='Enter') verifyFemalePasscode();">
-        
         <div id="passcodeError" class="passcode-error"></div>
-        
         <button class="passcode-submit-btn" onclick="verifyFemalePasscode()">
-            <i class="fa-solid fa-lock-open"></i> View Details
+            <i class="fa-solid fa-lock-open"></i> View Details 
         </button>
-
         <button onclick="closePasscodeModal()" class="shajra-modal-action-btn" style="margin-top: 15px; background: #e74c3c; color: white;">Cancel</button>
     </div>
 </div>
 
 
-<div id="analyticsModal" class="shajra-modal-overlay">
+<div id="allMembersModal" class="shajra-modal-overlay" onclick="if (event.target === this) closeAllMembers()">
+    <div class="shajra-modal-content">
+        <span class="shajra-modal-close-x" onclick="closeAllMembers()">&times;</span>
+        <div class="shajra-modal-title"><i class="fa-solid fa-list-ul"></i> All Members List</div>
+        <div style="margin-bottom: 10px;">
+            <input type="text" id="allMembersSearch" placeholder="Search in list..." 
+                   onkeyup="searchMemberList(this.value)" 
+                   style="padding: 6px; border: 1px solid #ccc; border-radius: 4px; width: 100%; max-width: 300px; font-size: 13px;">
+        </div>
+        <div style="max-height: 50vh; overflow-y: auto;">
+            <table class="all-members-table">
+                <thead id="memberListHeader">
+                    <tr>
+                        <th class="sortable asc" data-sort="full_name" style="width: 30%;">Name</th>
+                        <th class="sortable" data-sort="parent_name" style="width: 30%;">Parent</th>
+                        <th class="sortable" data-sort="is_alive" style="width: 15%;">Status</th>
+                        <th class="sortable" data-sort="dob" style="width: 15%;">Age</th>
+                        <th style="width: 10%;">Details</th>
+                    </tr>
+                </thead>
+                <tbody id="memberListBody">
+                    </tbody>
+            </table>
+        </div>
+        <button onclick="closeAllMembers()" class="shajra-modal-action-btn">Close</button>
+    </div>
+</div>
+
+<div id="analyticsModal" class="shajra-modal-overlay" onclick="if (event.target === this) closeAnalytics()">
     <div class="shajra-modal-content">
         <span class="shajra-modal-close-x" onclick="closeAnalytics()">&times;</span>
-        <div class="shajra-modal-title"><i class="fa-solid fa-chart-simple"></i> Analytics</div>
+        <div class="shajra-modal-title" style="display: block; text-align: center;">
+    <i class="fa-solid fa-chart-simple"></i> Statistics (شماریات)
+    <span id="statsContextTitle" style="display: block; font-size: 13px; font-weight: 500; color: #7f8c8d; margin-top: 5px;">(Puri Family)</span>
+</div>
         <div class="analytics-stats-grid">
             <div class="analytics-stat-card" style="grid-column: span 2;">
                 <span class="stat-number" id="statTotal">0</span><span class="stat-urdu">کل افراد</span>
@@ -764,114 +948,75 @@ header { background-color: #2c3e50; padding:10px 15px; display:flex; justify-con
             <div class="analytics-stat-card"><span class="stat-number" id="statMale">--</span><span class="stat-urdu">مرد /</span><span class="stat-urdu">عورت</span></div>
             <div class="analytics-stat-card"><span class="stat-number" id="statAlive">--</span><span class="stat-urdu">زندہ /</span><span class="stat-urdu">انتقال</span></div>
         </div>
-        
         <div class="analytics-fun-box">
-            <div style="font-weight:bold; font-size:13px; margin-bottom:8px; color:#1565c0;">Dilchasp Maloomat</div>
-            <div class="fun-item"><span>Sabse Buzurg</span> <span id="statOldest">--</span></div>
-            <div class="fun-item"><span>Sabse Chota</span> <span id="statYoungest">--</span></div>
-            <div class="fun-item" style="border:none;"><span>Zyada Naam</span> <span id="statCommonName">Loading...</span></div>
+            <div style="font-weight:bold; font-size:13px; margin-bottom:8px; color:#1565c0;">Dilchasp Malumat:</div>
+            <div class="fun-item"><span>Oldest Member (DOB)</span><span id="statOldest">N/A</span></div>
+            <div class="fun-item"><span>Youngest Member (DOB)</span><span id="statYoungest">N/A</span></div>
         </div>
         <button onclick="closeAnalytics()" class="shajra-modal-action-btn">Close</button>
     </div>
 </div>
 
-<div id="aboutModal" class="shajra-modal-overlay">
+<div id="eventsModal" class="shajra-modal-overlay" onclick="if (event.target === this) closeEvents()">
     <div class="shajra-modal-content">
-        <span class="shajra-modal-close-x" onclick="closeAbout()">&times;</span>
-        <div class="shajra-modal-title"><i class="fa-solid fa-address-card"></i> About</div>
-        
-        <div class="about-urdu-text-style" id="dynamicUrduText">Loading...</div>
-        
-        <div class="about-contact-box-style">
-            <div style="color:#d90429; font-weight:700; font-size:18px; margin-bottom:10px; font-family:'Noto Nastaliq Urdu',serif; text-align:center;">
-                <i class="fa-solid fa-headset"></i> رابطہ کریں
-            </div>
-            <p style="font-size:13px; color:#555; text-align:center;" id="dynamicAboutText">Loading...</p>
-            <div class="phone-display-custom" id="dynamicPhone" style="font-size:16px; font-weight:700; margin:10px 0; color:#333;">...</div>
-            <a id="dynamicWhatsapp" href="#" class="contact-whatsapp-btn-style"><i class="fa-brands fa-whatsapp"></i> WhatsApp Chat</a>
-        </div>
-        
-        <div class="features-list-box-style">
-            <strong>App Features:</strong>
-            <ul id="featuresList"></ul>
-        </div>
-        
-        <button class="shajra-modal-action-btn" onclick="closeAbout()">Close</button>
-    </div>
-</div>
-
-<div id="allMembersModal" class="shajra-modal-overlay">
-    <div class="shajra-modal-content" style="max-width: 90%; width: 700px; padding: 15px;">
-        <span class="shajra-modal-close-x" onclick="closeAllMembersList()">&times;</span>
-        <div class="shajra-modal-title" style="margin-bottom: 5px;"><i class="fa-solid fa-list"></i> All Members List</div>
-        
-        <div class="all-members-controls">
-            <input type="text" id="memberListSearch" onkeyup="filterMemberList()" placeholder="🔍 Search Name, Status, or Gender..." style="width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px;">
-        </div>
-
-        <div id="memberListTableContainer" style="max-height: 70vh; overflow-y: auto; text-align: left;">
-            <table class="all-members-table">
-                <thead>
-                    <tr id="memberListHeader">
-                        <th data-sort="full_name" class="sortable">Name</th>
-                        <th data-sort="gender" class="sortable">Gender</th>
-                        <th data-sort="is_alive" class="sortable">Status</th>
-                        <th data-sort="dob" class="sortable">Age</th>
-                        <th>Details</th>
-                    </tr>
-                </thead>
-                <tbody id="memberListBody">
-                    <tr><td colspan="5" style="text-align:center;">Loading all members...</td></tr>
-                </tbody>
-            </table>
-        </div>
-        
-        <button onclick="closeAllMembersList()" class="shajra-modal-action-btn">Close</button>
-    </div>
-</div>
-
-<div id="eventsModal" class="shajra-modal-overlay">
-    <div class="shajra-modal-content" style="max-width: 90%; width: 500px; padding: 15px;">
         <span class="shajra-modal-close-x" onclick="closeEvents()">&times;</span>
-        <div class="shajra-modal-title" style="margin-bottom: 15px;"><i class="fa-solid fa-calendar-check"></i> Events & Reminders</div>
+        <div class="shajra-modal-title"><i class="fa-solid fa-calendar-alt"></i> Family Events</div>
         
-        <div class="events-tabs" style="display: flex; justify-content: space-around; margin-bottom: 15px;">
-            <button class="event-tab-btn active-tab" data-target="upcoming" onclick="showEventsTab('upcoming')">Upcoming Events (آئندہ)</button>
-            <button class="event-tab-btn" data-target="past" onclick="showEventsTab('past')">Past Events (گزرے)</button>
+        <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 15px;">
+            <button class="event-tab-btn active-tab" onclick="changeEventTab(this, 'upcoming')">Upcoming</button>
+            <button class="event-tab-btn" onclick="changeEventTab(this, 'past')">Past</button>
         </div>
 
         <div id="upcomingEventsContainer" class="event-list-container">
-            <div style="text-align:center; color:#555; padding:20px;"><i class="fa-solid fa-spinner fa-spin"></i> Loading events...</div>
+            <div style="text-align:center; padding:20px;"><i class="fa-solid fa-spinner fa-spin"></i> Loading events...</div>
         </div>
-        
-        <div id="pastEventsContainer" class="event-list-container" style="display:none;">
-             <div style="text-align:center; color:#555; padding:20px;"><i class="fa-solid fa-spinner fa-spin"></i> Loading events...</div>
-        </div>
+        <div id="pastEventsContainer" class="event-list-container" style="display: none;">
+            </div>
 
         <button onclick="closeEvents()" class="shajra-modal-action-btn">Close</button>
     </div>
 </div>
 
+<div id="aboutModal" class="shajra-modal-overlay" onclick="if (event.target === this) closeAbout()">
+    <div class="shajra-modal-content">
+        <span class="shajra-modal-close-x" onclick="closeAbout()">&times;</span>
+        <div class="shajra-modal-title"><i class="fa-solid fa-circle-info"></i> About This Shajra</div>
+        <div class="about-urdu-text-style" id="dynamicUrduText">
+            (Loading Urdu text from settings...)
+        </div>
+        
+        <div class="about-contact-box-style">
+            <div style="font-size:16px; font-weight:700; color:#e74c3c; margin-bottom:10px; border-bottom: 2px solid #ffcc80; padding-bottom: 5px; text-align: center;"><i class="fa-solid fa-headset"></i> رابطہ کریں</div>
+
+            <p style="font-size:14px; margin-top:0; color:#555; text-align: center;" id="dynamicAboutText">
+                (Loading Contact text from settings...)
+            </p>
+            <p style="font-size:15px; font-weight:700; color:#1e88e5; margin-bottom:15px; margin-top:15px; text-align: center;">
+                <span id="dynamicPhone">N/A</span>
+            </p>
+            <a href="#" id="dynamicWhatsapp" target="_blank" class="contact-whatsapp-btn-style">
+                <i class="fa-brands fa-whatsapp"></i> WhatsApp
+            </a>
+        </div>
+        <div class="features-list-box-style">
+            <div style="font-weight:bold; font-size:14px; color:#388e3c;">Features:</div>
+            <ul id="featuresList">
+                <li>Responsive Design</li>
+                <li>Passcode Security for Female Details</li>
+            </ul>
+        </div>
+        <button onclick="closeAbout()" class="shajra-modal-action-btn">Close</button>
+    </div>
+</div>
+
 
 <script>
-// Global variable to store all members data
-let allMembersData = []; 
-let currentRootId = null; 
-let isHorizontal = false; // NEW: Track view state for Horizontal/Vertical toggle
-
-// NEW Global Sort State for All Members Table
-let currentSortColumn = 'full_name';
-let currentSortDirection = 'asc';
-
 // Function to mask female names (e.g., Maryam -> Ma****)
 function maskFemaleName(fullName, gender) {
-    
     // Check 1: If it's female
     if (gender && gender.toLowerCase() === 'f') {
-        
-        // Check 2: Mask ONLY if a password is set. 
-        // Agar femalePasscode NULL hai (ya empty string), toh masking nahi hogi.
-        if (femalePasscode) { 
+        // Check 2: Mask ONLY if a password is set.
+        if (femalePasscode) {
             if (!fullName || fullName.length < 2) return 'F-****';
             // Take the first two characters (case insensitive)
             const firstTwo = fullName.substring(0, 2);
@@ -883,7 +1028,6 @@ function maskFemaleName(fullName, gender) {
     // Agar male hai ya female hai par password set nahi hai, toh poora naam return karein
     return fullName;
 }
-
 
 // --- Age Calculation Function (Updated in Detail Modal) ---
 function calculateAge(dob, dod, isAlive) {
@@ -903,47 +1047,52 @@ function calculateAge(dob, dod, isAlive) {
 
     let age = endDate.getFullYear() - dobDate.getFullYear();
     const monthDifference = endDate.getMonth() - dobDate.getMonth();
-    
+
     if (monthDifference < 0 || (monthDifference === 0 && endDate.getDate() < dobDate.getDate())) {
         age--;
     }
-    
-    if (age < 0) return 'N/A';
-    
+
+    if (age < 0) return 'N/A'; // Should not happen
+
     return `${statusText} ${age} years)`;
 }
 
-// --- NEW: Toggle Horizontal/Vertical View ---
-function toggleTreeView() {
-    isHorizontal = !isHorizontal;
-    const tree = document.getElementById('visualTreeContainer');
-    const button = document.getElementById('toggleViewBtn');
+// Helper for All Members List sorting
+function getAgeForList(dob, isAlive, dod) {
+    if (!dob) return -1; // Sorts N/A members last
 
-    if (isHorizontal) {
-        tree.classList.add('shajra-horizontal-tree');
-        button.innerHTML = '<i class="fa-solid fa-arrows-up-down"></i> Vertical View';
-        // Scroll to the start (left)
-        tree.scrollLeft = 0; 
-    } else {
-        tree.classList.remove('shajra-horizontal-tree');
-        button.innerHTML = '<i class="fa-solid fa-arrows-left-right"></i> Horizontal View';
+    const dobDate = new Date(dob);
+    let endDate = isAlive ? new Date() : new Date(dod);
+
+    if (!isAlive && !dod) return -1; // If deceased but DOD is missing
+
+    let age = endDate.getFullYear() - dobDate.getFullYear();
+    const monthDifference = endDate.getMonth() - dobDate.getMonth();
+    if (monthDifference < 0 || (monthDifference === 0 && endDate.getDate() < dobDate.getDate())) {
+        age--;
     }
+    return age;
 }
 
+// --- Navigation/Modal Functions ---
+function toggleMenu() {
+    document.getElementById("myDropdown").classList.toggle("show");
+}
 
-// --- Modal Functions ---
-function toggleMenu(){ document.getElementById("myDropdown").classList.toggle("show"); }
-window.onclick = e => { if(!e.target.matches('.shajra-nav-btn') && !e.target.closest('.shajra-nav-btn') && !e.target.matches('#memberSearchInput') && !e.target.matches('#memberListSearch') && !e.target.closest('.search-close-btn')) { document.getElementById("myDropdown").classList.remove('show'); } }
-
-// UPDATED: Toggle Search Function
-function toggleSearch(isForcedClose = false) { 
+// UPDATED: handleSearchToggle to clear search results and use allMembersData
+function handleSearchToggle(isForcedClose) {
     const searchContainer = document.getElementById('searchContainer');
+    const searchResults = document.getElementById('searchResults');
     
     if (searchContainer.style.display === 'flex' || isForcedClose) {
         // Close action
         searchContainer.style.display = 'none';
-        document.getElementById('memberSearchInput').value = ''; // Clear input
-        if (currentRootId) loadFamilyTree(currentRootId); // Reload full tree
+        document.getElementById('memberSearchInput').value = ''; 
+        searchResults.innerHTML = ''; // NEW: Clear search results
+        searchResults.style.display = 'none'; // NEW: Hide search results
+        
+        // Reload full tree only if a root is selected (clears any partial search view if filterTree was manually run)
+        if (currentRootId) loadFamilyTree(currentRootId); 
     } else {
         // Open action (Only triggered by menu click)
         searchContainer.style.display = 'flex';
@@ -952,90 +1101,164 @@ function toggleSearch(isForcedClose = false) {
     document.getElementById("myDropdown").classList.remove('show');
 }
 
-function openAbout(){ document.getElementById("aboutModal").style.display="flex"; document.getElementById("myDropdown").classList.remove('show'); }
-function closeAbout(){ document.getElementById("aboutModal").style.display="none"; }
-function openAnalytics(){ document.getElementById("analyticsModal").style.display="flex"; calcStats(); }
-function closeAnalytics(){ document.getElementById("analyticsModal").style.display="none"; }
-function closeDetail(){ document.getElementById("detailModal").style.display="none"; }
+function openAbout(){
+    document.getElementById("aboutModal").style.display="flex";
+    document.getElementById("myDropdown").classList.remove('show');
+}
+function closeAbout(){
+    document.getElementById("aboutModal").style.display="none";
+}
+// UPDATED: openAnalytics now calls calcStats with the current root ID
+function openAnalytics(){
+    document.getElementById("analyticsModal").style.display="flex";
+    // Pass the currently selected root ID for scoped stats
+    calcStats(currentRootId); 
+}
+function closeAnalytics(){
+    document.getElementById("analyticsModal").style.display="none";
+}
+function closeDetail(){
+    document.getElementById("detailModal").style.display="none";
+}
 
-// --- NEW Passcode Modal Functions ---
+// --- Passcode Modal Functions ---
 function openPasscodeModal(data) {
-    tempMemberData = data;
-    // We display the detail modal behind it so it gets the overlay effect, but it's empty
-    document.getElementById("detailModal").style.display = "flex"; 
+    tempMemberData = data; // We display the detail modal behind it so it gets the overlay effect, but it's empty
+    document.getElementById("detailModal").style.display = "flex";
     document.getElementById('passcodeError').innerText = ''; // Clear previous errors
     document.getElementById('femalePasscodeInput').value = ''; // Clear input
     document.getElementById("passcodeModal").style.display = "flex";
     // Focus on input after modal is displayed
     setTimeout(() => document.getElementById('femalePasscodeInput').focus(), 100);
 }
-
 function closePasscodeModal() {
     document.getElementById("passcodeModal").style.display = "none";
     // Also close the detail modal overlay
-    document.getElementById("detailModal").style.display = "none"; 
+    document.getElementById("detailModal").style.display = "none";
     tempMemberData = null; // Clear temporary data
 }
-
 // Function to handle passcode submission
 async function verifyFemalePasscode() {
     const inputField = document.getElementById('femalePasscodeInput');
-    const inputPassword = inputField.value.trim();
     const errorDisplay = document.getElementById('passcodeError');
-    
-    errorDisplay.innerText = ''; // Clear error message
+    const inputPasscode = inputField.value.trim();
 
-    if (!inputPassword) {
-        errorDisplay.innerText = "برائے مہربانی پاس کوڈ درج کریں۔";
-        inputField.focus();
+    if (!inputPasscode) {
+        errorDisplay.innerText = 'Passcode lazmi hai.';
         return;
     }
 
-    const requiredPasscode = femalePasscode; 
-    
-    if (!requiredPasscode) {
-         errorDisplay.innerText = "سیکیورٹی سسٹم میں خرابی۔ براہ کرم ایڈمن سے رابطہ کریں۔";
-         return;
-    }
-
-    if (inputPassword === requiredPasscode) { 
-        // Correct password entered
-        document.getElementById("passcodeModal").style.display = "none"; // Only close passcode modal
-        
-        // Use the temporarily stored data to render the detail modal (detail modal remains open)
-        renderAndShowDetailModal(tempMemberData);
-        tempMemberData = null; // Clear temp data
+    if (inputPasscode === femalePasscode) {
+        errorDisplay.innerText = '';
+        closePasscodeModal();
+        // The checkAndLoadDetail function will be called with the temporary data, bypassing the security check
+        if (tempMemberData) {
+             // Since tempMemberData only has ID, Name, Gender, fetch full details now
+             const { data: fullData, error } = await _supabase.from('family_data').select('*').eq('id', tempMemberData.id).single();
+             if (error) {
+                 console.error("Error fetching full details:", error);
+                 document.getElementById("detailModal").style.display = "none";
+                 alert("تفصیلات لوڈ نہیں ہو سکی۔");
+                 return;
+             }
+             renderAndShowDetailModal(fullData);
+        }
     } else {
-        errorDisplay.innerText = "غلط پاس کوڈ۔ دوبارہ کوشش کریں یا منسوخ کریں۔";
-        inputField.value = ''; // Clear input on wrong attempt
-        inputField.focus();
+        errorDisplay.innerText = 'Ghalat Passcode. Dubara koshish karein.';
+        inputField.value = '';
     }
 }
-// --- END NEW Passcode Modal Functions ---
 
+// Helper function to check for passcode requirement and load data
+function checkAndLoadDetail(data) {
+    const isFemale = data.gender && data.gender.toLowerCase() === 'f';
+    const isProtected = isFemale && femalePasscode;
 
-// --- Events & Reminders Modal Functions ---
-function openEvents(){ 
-    document.getElementById("eventsModal").style.display="flex"; 
-    document.getElementById("myDropdown").classList.remove('show'); 
-    loadEvents(); // Load data when modal opens
+    if (isProtected) {
+        // If protected, open the passcode modal
+        openPasscodeModal(data);
+    } else {
+        // If not protected, proceed to load details
+        document.getElementById("detailModal").style.display = "flex";
+        renderAndShowDetailModal(data);
+    }
 }
-function closeEvents(){ 
-    document.getElementById("eventsModal").style.display="none"; 
-}
 
-function showEventsTab(tabId) {
-    document.querySelectorAll('.event-list-container').forEach(container => container.style.display = 'none');
-    document.getElementById(tabId + 'EventsContainer').style.display = 'block';
+
+// Renamed original logic to this helper function
+async function renderAndShowDetailModal(data) {
+    const modalContentArea = document.getElementById('modalContentArea');
     
-    document.querySelectorAll('.event-tab-btn').forEach(btn => btn.classList.remove('active-tab'));
-    document.querySelector(`.event-tab-btn[data-target="${tabId}"]`).classList.add('active-tab');
+    // We already have full data from the global cache (or fetched after passcode verification)
+    
+    // detailModal is already shown by checkAndLoadDetail (or openPasscodeModal)
+    const statusText = data.is_alive ? 'زندہ (Alive)' : 'انتقال کر گئے (Deceased)';
+    const genderText = data.gender ? (data.gender.toLowerCase() === 'm' ? 'مرد (Male)' : 'عورت (Female)') : 'N/A';
+    const dobText = data.dob ? formatDate(data.dob) : 'N/A';
+    const dodText = data.dod ? formatDate(data.dod) : 'N/A';
+    const ageInfo = calculateAge(data.dob, data.dod, data.is_alive);
+    const relationText = data.is_alive ? 'Family Member' : 'Late Family Member'; // Could be improved
+    
+    const spouse = allMembersData.find(m => m.id === data.spouse_id);
+    let spouseHtml = '';
+    if (spouse) {
+        const spouseName = maskFemaleName(spouse.full_name, spouse.gender);
+        spouseHtml = `<div class="modal-data-row"><span>Spouse</span><span>${spouseName}</span></div>`;
+    }
+    
+    const phoneText = data.phone || 'N/A';
+    
+    let profileImageHtml = '';
+    if (data.image_url) {
+        profileImageHtml = `<img src="${data.image_url}" alt="${data.full_name}" class="modal-profile-img">`;
+    } else {
+        // NEW: Placeholder icon if no image
+        const iconClass = data.gender && data.gender.toLowerCase() === 'f' ? 'fa-person-dress' : 'fa-person';
+        const iconColor = data.gender && data.gender.toLowerCase() === 'f' ? '#d90429' : '#1e40af';
+        profileImageHtml = `<div class="modal-profile-icon"> <i class="fa-solid ${iconClass}" style="font-size: 60px; color: ${iconColor};"></i> </div>`;
+    }
+
+    // Name is shown in full here as user provided the passcode
+    const modalHtml = `
+        ${profileImageHtml}
+        <div class="modal-full-name">${data.full_name}</div>
+        <div class="modal-relation">رشتہ: ${relationText}</div>
+        <div class="detail-data-section" style="margin-top:20px;">
+            <div class="modal-data-row"><span>Status</span><span>${statusText}</span></div>
+            <div class="modal-data-row"><span>Age</span><span>${ageInfo}</span></div>
+            <div class="modal-data-row"><span>Gender</span><span>${genderText}</span></div>
+            <div class="modal-data-row"><span>Date of Birth</span><span>${dobText}</span></div>
+            ${data.is_alive ? '' : `<div class="modal-data-row"><span>Date of Death</span><span>${dodText}</span></div>`}
+            ${spouseHtml}
+            <div class="modal-data-row"><span>Phone/Contact</span><span>${phoneText}</span></div>
+        </div>
+    `;
+    modalContentArea.innerHTML = modalHtml;
+}
+
+// NEW ENTRY POINT: openMemberDetail (Performs password check if female)
+async function openMemberDetail(memberId) {
+    const data = allMembersData.find(m => m.id == memberId);
+    if (!data) {
+        // Fallback: If data is not in cache, fetch it minimally for check
+        const { data: fetchedData } = await _supabase.from('family_data').select('id, full_name, gender').eq('id', memberId).single();
+        if (!fetchedData) { alert("Member data not found!"); return; }
+        // Need to load full data later if required, but proceed with check
+        return checkAndLoadDetail(fetchedData);
+    }
+    checkAndLoadDetail(data);
+}
+
+// --- Events Functions ---
+function changeEventTab(btn, type) {
+    document.querySelectorAll('.event-tab-btn').forEach(b => b.classList.remove('active-tab'));
+    btn.classList.add('active-tab');
+    document.getElementById('upcomingEventsContainer').style.display = type === 'upcoming' ? 'block' : 'none';
+    document.getElementById('pastEventsContainer').style.display = type === 'past' ? 'block' : 'none';
 }
 
 // Helper to format date
 function formatDate(dateString) {
-    if (!dateString) return 'N/A';
-    // Use the original date string to create a date object
     const date = new Date(dateString);
     const options = { year: 'numeric', month: 'short', day: 'numeric' };
     return date.toLocaleDateString('en-US', options);
@@ -1047,112 +1270,118 @@ function calculateDaysDifference(date) {
     today.setHours(0, 0, 0, 0);
     const eventDate = new Date(date);
     eventDate.setHours(0, 0, 0, 0);
+    
+    // Check if the event is for the current year, and if it has passed, use next year
+    const currentYear = today.getFullYear();
+    let nextEventDate = new Date(currentYear, eventDate.getMonth(), eventDate.getDate());
+    
+    // If the event has already passed this year, set it for next year
+    if (nextEventDate < today) {
+        nextEventDate = new Date(currentYear + 1, eventDate.getMonth(), eventDate.getDate());
+    }
 
-    const diffTime = eventDate.getTime() - today.getTime();
+    const diffTime = nextEventDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
     if (diffDays === 0) return 'Today!';
     if (diffDays === 1) return 'Tomorrow';
     if (diffDays > 0) return `in ${diffDays} days`;
+    
+    // For past events in the current calendar year (handled in loadEvents)
     if (diffDays === -1) return 'Yesterday';
-    return `${Math.abs(diffDays)} days ago`;
+    return `${Math.abs(diffDays)} days ago`; // Should not hit this path if logic is correct
 }
 
 // Main logic for fetching and displaying events
 async function loadEvents() {
     const upcomingContainer = document.getElementById('upcomingEventsContainer');
     const pastContainer = document.getElementById('pastEventsContainer');
-    
     upcomingContainer.innerHTML = '<div style="text-align:center; padding:20px;"><i class="fa-solid fa-spinner fa-spin"></i> Loading events...</div>';
     pastContainer.innerHTML = '<div style="text-align:center; padding:20px;"><i class="fa-solid fa-spinner fa-spin"></i> Loading events...</div>';
     
     // Use global allMembersData if loaded, otherwise fetch it.
-    const members = allMembersData.length > 0 ? allMembersData : (await _supabase.from('family_data').select('*')).data;
+    const members = allMembersData.length > 0 ? allMembersData : (await _supabase.from('family_data').select('*')).data || [];
     
-    if (!members) {
-        upcomingContainer.innerHTML = '<div style="color:red; text-align:center; padding:20px;">Error loading member data.</div>';
-        pastContainer.innerHTML = '';
-        return;
-    }
-
     const events = [];
-    const currentYear = new Date().getFullYear();
     const today = new Date();
+    const currentYear = today.getFullYear();
     today.setHours(0, 0, 0, 0);
 
-    members.forEach(m => {
-        // 1. Birthdays (if DOB exists)
-        if (m.dob) {
-            const dob = new Date(m.dob);
-            // Create event date for THIS year
-            const thisYearEvent = new Date(currentYear, dob.getMonth(), dob.getDate());
-            thisYearEvent.setHours(0, 0, 0, 0);
+    members.forEach(member => {
+        const name = maskFemaleName(member.full_name, member.gender);
+
+        // 1. Birthday Event
+        if (member.dob) {
+            const dobDate = new Date(member.dob);
             
-            // Calculate age only if alive
-            const ageText = m.is_alive ? `(Turning ${currentYear - dob.getFullYear()})` : `(Would be ${currentYear - dob.getFullYear()})`;
+            // Calculate upcoming birthday date
+            let birthdayThisYear = new Date(currentYear, dobDate.getMonth(), dobDate.getDate());
+            if (birthdayThisYear < today) {
+                birthdayThisYear = new Date(currentYear + 1, dobDate.getMonth(), dobDate.getDate());
+            }
 
             events.push({
-                date: thisYearEvent,
-                title: `${m.full_name}'s Birthday ${ageText}`,
-                icon: m.gender && m.gender.toLowerCase() === 'f' ? 'fa-cake-candles' : 'fa-gift',
+                id: member.id,
+                date: birthdayThisYear,
                 type: 'birthday',
-                originalDate: m.dob
+                title: `${name}'s Birthday`,
+                icon: 'fa-cake-candles',
+                isAlive: member.is_alive
             });
         }
 
-        // 2. Anniversaries (Death - if not alive and DOD exists)
-        if (!m.is_alive && m.dod) {
-            const dod = new Date(m.dod);
-             // Create event date for THIS year
-            const thisYearEvent = new Date(currentYear, dod.getMonth(), dod.getDate());
-            thisYearEvent.setHours(0, 0, 0, 0);
+        // 2. Death Anniversary Event
+        if (!member.is_alive && member.dod) {
+            const dodDate = new Date(member.dod);
             
-            const yearsPassed = currentYear - dod.getFullYear();
-            const yearsText = `(${yearsPassed}${yearsPassed === 1 ? 'st' : 'th'} Anniversary)`;
-            
+            // Calculate upcoming death anniversary date
+            let anniversaryThisYear = new Date(currentYear, dodDate.getMonth(), dodDate.getDate());
+            if (anniversaryThisYear < today) {
+                anniversaryThisYear = new Date(currentYear + 1, dodDate.getMonth(), dodDate.getDate());
+            }
+
             events.push({
-                date: thisYearEvent,
-                title: `${m.full_name}'s Death Anniversary ${yearsText}`,
-                icon: 'fa-cross',
+                id: member.id,
+                date: anniversaryThisYear,
                 type: 'death',
-                originalDate: m.dod
+                title: `${name}'s Death Anniversary`,
+                icon: 'fa-cross',
+                isAlive: false
             });
         }
     });
 
-    // Sort all events chronologically
     events.sort((a, b) => a.date - b.date);
 
+    // Separate into upcoming and past events (relative to today)
     const upcomingEvents = [];
     const pastEvents = [];
 
-    // Separate into upcoming and past events (relative to today)
     events.forEach(event => {
         // If the event is today or in the future
-        if (event.date >= today) {
+        if (event.date.getTime() >= today.getTime()) {
             upcomingEvents.push(event);
         } else {
             // Only add to past if it occurred in the current calendar year
             if (event.date.getFullYear() === currentYear) {
-                 pastEvents.push(event);
+                pastEvents.push(event);
             }
         }
-    });
-
+    }); 
+    
     // Render lists (Past events are shown newest first)
     renderEventList(upcomingEvents, upcomingContainer, 'upcoming');
-    renderEventList(pastEvents.reverse(), pastContainer, 'past'); 
+    renderEventList(pastEvents.reverse(), pastContainer, 'past');
 }
-
 
 function renderEventList(events, container, type) {
     if (events.length === 0) {
         container.innerHTML = `<div style="text-align:center; color:#777; padding:20px;">
-            <i class="fa-solid fa-circle-info"></i> No ${type} events found for this year.
+            <i class="fa-solid fa-circle-info"></i> No ${type} events found for this year. 
         </div>`;
         return;
     }
-    
+
     let html = '';
     events.forEach(event => {
         const daysDiffText = calculateDaysDifference(event.date);
@@ -1167,106 +1396,85 @@ function renderEventList(events, container, type) {
                 <div class="event-details">
                     <div class="event-title">${event.title}</div>
                     <div class="event-date">
-                         ${formatDate(event.date)} 
-                         <span class="event-days">${daysDiffText}</span>
+                        ${formatDate(event.date)} 
+                        <span class="event-days">${type === 'upcoming' ? daysDiffText : ''}</span>
                     </div>
                 </div>
             </div>
         `;
     });
-    
     container.innerHTML = html;
 }
-// --- END Events & Reminders Modal Functions ---
 
-
-// --- All Members List Modal Functions ---
-function openAllMembersList() {
+function openEvents() {
+    loadEvents();
+    document.getElementById("eventsModal").style.display="flex";
     document.getElementById("myDropdown").classList.remove('show');
-    document.getElementById("allMembersModal").style.display = "flex";
-    if (allMembersData.length === 0) {
-        loadAllMembersData(true); 
-    } else {
-        renderMemberList();
-    }
+}
+function closeEvents() {
+    document.getElementById("eventsModal").style.display="none";
 }
 
-function closeAllMembersList() {
-    document.getElementById("allMembersModal").style.display = "none";
+
+// --- All Members List Functions ---
+function openAllMembers(event){
+    event.preventDefault(); // Stop link navigation
+    document.getElementById("allMembersModal").style.display="flex";
+    document.getElementById("myDropdown").classList.remove('show');
+    // Clear search and reset sort before loading
+    document.getElementById('allMembersSearch').value = '';
+    currentSortColumn = 'full_name'; 
+    currentSortDirection = 'asc'; 
+    renderMemberList();
+    setupSortListeners();
+}
+function closeAllMembers(){
+    document.getElementById("allMembersModal").style.display="none";
 }
 
-// Function to fetch all data if not available
-async function loadAllMembersData(renderAfterLoad = false) {
-    const body = document.getElementById('memberListBody');
-    body.innerHTML = '<tr><td colspan="5" style="text-align:center;"><i class="fa-solid fa-spinner fa-spin"></i> Loading all members from Database...</td></tr>';
-    
-    const { data, error } = await _supabase.from('family_data').select('*');
-    allMembersData = data || []; 
-
-    if (error) {
-        body.innerHTML = `<tr><td colspan="5" style='color:red; text-align:center;'>Data load error: ${error.message}</td></tr>`;
-        return;
-    }
-    
-    if (renderAfterLoad) {
-        renderMemberList();
-    }
-}
-
-// Function to calculate Age for display in the table
-function getAgeForList(dob, isAlive, dod) {
-    if (!dob) return 'N/A';
-    const dobDate = new Date(dob);
-    let endDate = isAlive ? new Date() : (dod ? new Date(dod) : new Date());
-    
-    let age = endDate.getFullYear() - dobDate.getFullYear();
-    const monthDifference = endDate.getMonth() - dobDate.getMonth();
-    
-    if (monthDifference < 0 || (monthDifference === 0 && endDate.getDate() < dobDate.getDate())) {
-        age--;
-    }
-    return age >= 0 ? age : 'N/A';
-}
-
-// Function to sort the members list
+// Function to sort the array
 function sortMemberList(a, b) {
     const column = currentSortColumn;
     const dir = currentSortDirection === 'asc' ? 1 : -1;
-
     let valA = a[column];
     let valB = b[column];
-    
+
     // Custom handling for Age sorting (using DOB column)
     if (column === 'dob') {
         valA = getAgeForList(a.dob, a.is_alive, a.dod);
         valB = getAgeForList(b.dob, b.is_alive, b.dod);
-        
-        if (valA === 'N/A') return dir * 1;
-        if (valB === 'N/A') return dir * -1;
-        
+        if (valA === -1) return dir * 1;
+        if (valB === -1) return dir * -1;
         // Sort by Age (Largest Age first for 'asc' means oldest first)
         return dir * (valB - valA); 
     }
     
+    // Custom handling for Parent Name sorting (we need to get the parent's full name)
+    if (column === 'parent_name') {
+        const parentA = allMembersData.find(m => m.id === a.parent_id);
+        const parentB = allMembersData.find(m => m.id === b.parent_id);
+        valA = parentA ? parentA.full_name : '';
+        valB = parentB ? parentB.full_name : '';
+    }
+
     // Custom handling for Status (is_alive boolean)
-     if (column === 'is_alive') {
+    if (column === 'is_alive') {
         valA = a.is_alive ? 1 : 0;
         valB = b.is_alive ? 1 : 0;
         // Alive first
-        return dir * (valB - valA); 
+        return dir * (valB - valA);
     }
-    
+
     // Default string comparison
     if (typeof valA === 'string') {
         return dir * (valA || '').localeCompare((valB || ''), 'en', { sensitivity: 'base' });
     }
-    
+
     // Default numeric comparison
     if (valA < valB) return dir * -1;
     if (valA > valB) return dir * 1;
     return 0;
 }
-
 
 // Function to render the table body (UPDATED to use masked name)
 function renderMemberList(members = allMembersData) {
@@ -1276,56 +1484,57 @@ function renderMemberList(members = allMembersData) {
     // Apply sorting before rendering
     members.sort(sortMemberList);
 
-    if (members.length === 0) {
-        body.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#777; padding: 20px;">No members found matching the criteria.</td></tr>';
-        
-    }
-
-    members.forEach(member => {
-        const age = getAgeForList(member.dob, member.is_alive, member.dod);
-        const statusText = member.is_alive ? 'Alive' : 'Deceased';
-        const genderText = member.gender && member.gender.toLowerCase() === 'f' ? 'Female' : 'Male';
-        
-        // APPLY MASKING HERE
-        const displayFullName = maskFemaleName(member.full_name, member.gender);
-        
-        body.innerHTML += `
-            <tr onclick="openMemberDetail(${member.id})" style="cursor:pointer;">
-                <td data-value="${member.full_name}">${displayFullName}</td> 
-                <td data-value="${genderText}">${genderText}</td>
-                <td data-value="${statusText}" style="color:${member.is_alive ? '#2ecc71' : '#e74c3c'}; font-weight:600;">${statusText}</td>
-                <td data-value="${age}">${age === 'N/A' ? age : age + ' yrs'}</td>
-                <td><button class="details-link" onclick="event.stopPropagation(); openMemberDetail(${member.id});">View</button></td>
-            </tr>
-        `;
-    });
-    
-    // Update header classes to show current sort state
-    document.querySelectorAll('#memberListHeader th').forEach(th => {
+    // Update table header icons
+    document.querySelectorAll('#memberListHeader .sortable').forEach(th => {
         th.classList.remove('asc', 'desc');
         if (th.getAttribute('data-sort') === currentSortColumn) {
             th.classList.add(currentSortDirection);
         }
     });
+
+    if (members.length === 0) {
+        body.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#777; padding:20px;">No members found.</td></tr>`;
+        return;
+    }
+
+    let html = '';
+    members.forEach(member => {
+        const nameToDisplay = maskFemaleName(member.full_name, member.gender);
+        
+        const parent = allMembersData.find(m => m.id === member.parent_id);
+        const parentName = parent ? maskFemaleName(parent.full_name, parent.gender) : 'N/A (Root)';
+        
+        const statusText = member.is_alive ? 'Alive' : 'Deceased';
+        const age = getAgeForList(member.dob, member.is_alive, member.dod);
+        const ageText = age >= 0 ? `${age} yrs` : 'N/A';
+        
+        html += `
+            <tr>
+                <td>${nameToDisplay}</td>
+                <td>${parentName}</td>
+                <td>${statusText}</td>
+                <td>${ageText}</td>
+                <td><button class="details-link" onclick="openMemberDetail(${member.id})">View</button></td>
+            </tr>
+        `;
+    });
+    body.innerHTML = html;
 }
 
-// Search/Filter function
-function filterMemberList() {
-    const searchText = document.getElementById('memberListSearch').value.toLowerCase().trim();
-    
-    if (searchText.length < 1) {
-        renderMemberList();
+function searchMemberList(searchText) {
+    const text = searchText.toLowerCase().trim();
+    if (!text) {
+        renderMemberList(allMembersData);
         return;
     }
     
     const filtered = allMembersData.filter(member => {
-        const fullName = (member.full_name || '').toLowerCase();
-        const status = member.is_alive ? 'alive' : 'deceased';
-        const gender = (member.gender || '').toLowerCase();
+        const name = (member.full_name || '').toLowerCase();
+        const parent = allMembersData.find(m => m.id === member.parent_id);
+        const parentName = (parent ? parent.full_name : '').toLowerCase();
+        const status = (member.is_alive ? 'alive' : 'deceased').toLowerCase();
         
-        return fullName.includes(searchText) || 
-               status.includes(searchText) ||
-               gender.includes(searchText);
+        return name.includes(text) || parentName.includes(text) || status.includes(text);
     });
     
     renderMemberList(filtered);
@@ -1336,7 +1545,6 @@ function setupSortListeners() {
     document.querySelectorAll('#memberListHeader .sortable').forEach(th => {
         th.addEventListener('click', function() {
             const newColumn = this.getAttribute('data-sort');
-            
             if (currentSortColumn === newColumn) {
                 currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
             } else {
@@ -1350,259 +1558,199 @@ function setupSortListeners() {
 // --- END All Members List Functions ---
 
 
-// --- NEW/UPDATED Detail Modal Logic with Custom Password Modal ---
-
-// Renamed original logic to this helper function
-async function renderAndShowDetailModal(data) {
-    const modalContentArea = document.getElementById('modalContentArea');
+// NEW: Function to find the path of IDs from the root to a member
+function findPathToMember(targetMemberId, rootId) {
+    // If the target is the root itself
+    if (targetMemberId === rootId) return [rootId];
     
-    // Re-fetch data if needed (only if the passed 'data' is incomplete, which shouldn't happen from global cache)
-    if (!data || !data.full_name) {
-         const { data: fetchedData, error } = await _supabase.from('family_data').select('*').eq('id', data.id).single();
-         if (error || !fetchedData) {
-             console.error("Error loading member detail:", error);
-             modalContentArea.innerHTML = `<div style="color:red; margin:20px 0; text-align:center;">Data load nahi ho saka. ID: ${data.id}. (Supabase connection issue or ID not found)</div>`;
-             return;
-         }
-         data = fetchedData;
+    const path = [];
+    let current = allMembersData.find(m => m.id === targetMemberId);
+
+    // Loop upwards until we reach the ultimate root or a parent is missing
+    while (current && current.id !== rootId) {
+        path.unshift(current.id); // Add current member to the front of the path
+        current = allMembersData.find(m => m.id === current.parent_id);
     }
     
-    // detailModal is already shown by checkAndLoadDetail (or openPasscodeModal)
-    
-    const statusText = data.is_alive ? 'زندہ (Alive)' : 'انتقال کر گئے (Deceased)';
-    const genderText = data.gender ? (data.gender.toLowerCase() === 'm' ? 'مرد (Male)' : 'عورت (Female)') : 'N/A';
-    const dobText = data.dob || 'N/A';
-    const dodText = data.dod || 'N/A';
-    const phoneText = data.phone || 'N/A';
-    const relationText = data.relation || 'N/A'; 
-    
-    // Calculate Age 
-    const ageInfo = calculateAge(data.dob, data.dod, data.is_alive);
+    // If the loop stopped because current.id === rootId, add the root id to the front
+    if (current && current.id === rootId) {
+        path.unshift(rootId);
+    } else if (path.length > 0) {
+         // If we stopped before reaching the intended rootId (e.g. rootId is wrong/missing parent), just return the path found
+         return path;
+    }
 
-    // SPOUSE LOGIC
-    let spouseName = 'N/A';
-    let spouseSource = '';
-    if (data.spouse_external_name) {
-        spouseName = data.spouse_external_name;
-        spouseSource = ' (Manual)';
-    } else if (data.spouse_id) {
-        const spouse = allMembersData.find(m => m.id === data.spouse_id);
-        if (spouse) {
-            // Apply masking to spouse's name if they are female
-            const spouseDisplayName = maskFemaleName(spouse.full_name, spouse.gender); 
-            spouseName = spouseDisplayName;
-            spouseSource = ` (ID: ${data.spouse_id})`;
+    return path; 
+}
+
+
+// NEW: Function to handle instant search input
+function handleSearchInput(searchText) {
+    const resultsContainer = document.getElementById('searchResults');
+    const text = searchText.toLowerCase().trim();
+    
+    // Clear previous results and hide if search text is too short
+    if (text.length < 2) {
+        resultsContainer.innerHTML = '';
+        resultsContainer.style.display = 'none';
+        // Reload main tree view if search bar is cleared
+        if (currentRootId) loadFamilyTree(currentRootId); 
+        return;
+    }
+    
+    // Filter members
+    const matchingMembers = allMembersData.filter(member => 
+        member.full_name && member.full_name.toLowerCase().includes(text)
+    ).slice(0, 10); // Limit to 10 results
+
+    let html = '';
+    
+    if (matchingMembers.length === 0) {
+        html = '<div style="padding: 10px; color: #777; font-size: 13px; text-align: center;">کوئی ممبر نہیں ملا۔</div>';
+    } else {
+        matchingMembers.forEach(member => {
+            // Find parent for context (Display Context Feature)
+            const parent = allMembersData.find(m => m.id === member.parent_id);
+            const parentName = parent ? maskFemaleName(parent.full_name, parent.gender) : 'Root / No Parent';
+            const nameToDisplay = maskFemaleName(member.full_name, member.gender);
+            const iconClass = member.gender && member.gender.toLowerCase() === 'f' ? 'fa-person-dress' : 'fa-person';
+            const iconColor = member.gender && member.gender.toLowerCase() === 'f' ? '#e74c3c' : '#3498db';
+
+            html += `
+                <div class="search-result-item" onclick="selectMemberFromSearch(${member.id})">
+                    <div class="result-icon" style="color: ${iconColor};">
+                        <i class="fa-solid ${iconClass}"></i>
+                    </div>
+                    <div class="result-info">
+                        <div class="result-name">${nameToDisplay}</div>
+                        <div class="result-parent">Son/Daughter of: ${parentName}</div>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    resultsContainer.innerHTML = html;
+    resultsContainer.style.display = 'block';
+}
+
+// NEW: Function to handle selecting a member from the search list (Locate & Highlight Feature)
+function selectMemberFromSearch(memberId) {
+    const member = allMembersData.find(m => m.id === memberId);
+    if (!member) return;
+
+    // Find the ultimate root of this member (the one with no parent)
+    let root = member;
+    while (root.parent_id) {
+        const parent = allMembersData.find(m => m.id === root.parent_id);
+        if (parent) {
+            root = parent;
         } else {
-            spouseName = `Linked ID: ${data.spouse_id}`;
-            spouseSource = ' (Not Found)';
+            break;
         }
     }
-    const spouseHtml = `<div class="modal-data-row"><span>Spouse (شریک حیات)</span><span>${spouseName}${spouseSource}</span></div>`;
+    const ultimateRootId = root.id;
 
+    // 1. Find the path of IDs from ultimateRootId to memberId
+    const pathIds = findPathToMember(memberId, ultimateRootId);
+
+    // 2. Hide search results and clear input
+    document.getElementById('searchResults').innerHTML = '';
+    document.getElementById('searchResults').style.display = 'none';
+    document.getElementById('memberSearchInput').value = member.full_name; // Display full name in search box
+
+    // 3. Set the root dropdown to the new root and load the tree with the path
+    const rootSelect = document.getElementById('rootMemberSelect');
+    rootSelect.value = ultimateRootId;
     
-    // NEW: Gender-specific image/icon logic for detail modal
-    let profileImageHtml = '';
-    if (data.image_url) {
-        profileImageHtml = `<img src="${data.image_url}" alt="${data.full_name}" class="modal-profile-img">`;
-    } else {
-        const iconClass = data.gender && data.gender.toLowerCase() === 'f' ? 'fa-person-dress' : 'fa-person';
-        const iconColor = data.gender && data.gender.toLowerCase() === 'f' ? '#d90429' : '#1e40af'; 
-        
-        profileImageHtml = `<div class="modal-profile-icon">
-                                <i class="fa-solid ${iconClass}" style="font-size: 60px; color: ${iconColor};"></i>
-                            </div>`;
-    }
-
-    // Name is shown in full here as user provided the passcode
-    const modalHtml = `
-        ${profileImageHtml}
-        <div class="modal-full-name">${data.full_name}</div>
-        <div class="modal-relation">رشتہ: ${relationText}</div>
-        <div class="detail-data-section" style="margin-top:20px;">
-            <div class="modal-data-row"><span>Status</span><span>${statusText}</span></div>
-            <div class="modal-data-row"><span>Age</span><span>${ageInfo}</span></div> 
-            <div class="modal-data-row"><span>Gender</span><span>${genderText}</span></div>
-            <div class="modal-data-row"><span>Date of Birth</span><span>${dobText}</span></div>
-            ${data.is_alive ? '' : `<div class="modal-data-row"><span>Date of Death</span><span>${dodText}</span></div>`}
-            ${spouseHtml} 
-            <div class="modal-data-row"><span>Phone/Contact</span><span>${phoneText}</span></div>
-        </div>
-    `;
-    modalContentArea.innerHTML = modalHtml;
+    // Load the tree using the new root and pass the path for auto-expansion/highlighting
+    loadFamilyTree(ultimateRootId, pathIds);
 }
 
-// NEW ENTRY POINT: openMemberDetail (Performs password check if female)
-async function openMemberDetail(memberId) {
-    const data = allMembersData.find(m => m.id == memberId);
-    
-    if (!data) {
-        // Fallback: If data is not in cache, fetch it minimally for check
-        const { data: fetchedData } = await _supabase.from('family_data').select('id, full_name, gender').eq('id', memberId).single();
-        if (!fetchedData) {
-            alert("Member data not found!");
-            return;
-        }
-        // Need to load full data later if required, but proceed with check
-        return checkAndLoadDetail(fetchedData);
-    } 
-    
-    checkAndLoadDetail(data);
-}
 
-// MODIFIED checkAndLoadDetail function to use the custom modal function
-function checkAndLoadDetail(data) {
-    const modalContentArea = document.getElementById('modalContentArea');
-
-    // 1. Prepare loading state (in the detail modal behind the passcode modal)
-    modalContentArea.innerHTML = `<div style="font-size:18px; color:#555; padding-top:10px;"><i class="fa-solid fa-spinner fa-spin"></i> Loading Data for ID: ${data.id}...</div>`;
-
-    // 2. Check if the member is female AND if a passcode is set.
-    // FIX 3: Added '&& femalePasscode' condition to bypass password if not set
-    if (data.gender && data.gender.toLowerCase() === 'f' && femalePasscode) { 
-        // Passcode is set, open the stylish passcode modal
-        openPasscodeModal(data);
-    } else {
-        // Male member, OR Female member with no required passcode, open directly
-        // Display the detail modal and render content
-        document.getElementById("detailModal").style.display = "flex";
-        renderAndShowDetailModal(data); // 'data' is now guaranteed to be complete
-    }
-}
-// --- END Detail Modal Logic ---
-
-
-// --- Collapse/Expand Logic (unchanged) ---
-window.toggleChildren = function(element, event) {
+// --- Tree Rendering Functions (Minor Updates for Global Data Cache) ---
+function toggleChildren(btn, event) {
     event.stopPropagation();
-    const li = element.closest('li');
+    const li = btn.closest('li');
     li.classList.toggle('collapsed');
-    const icon = element.querySelector('i');
-    if (li.classList.contains('collapsed')) {
-        icon.classList.replace('fa-minus', 'fa-plus');
-    } else {
-        icon.classList.replace('fa-plus', 'fa-minus');
-    }
+    btn.innerHTML = li.classList.contains('collapsed') ? '<i class="fa-solid fa-plus"></i>' : '<i class="fa-solid fa-minus"></i>';
 }
 
-
-// --- Tree Generation Logic (UPDATED with icon logic and name masking) ---
-function createTreeHtml(member){
-    const nameToDisplayUnmasked = member.full_name || 'نامعلوم';
-    // APPLY MASKING HERE
-    const nameToDisplay = maskFemaleName(nameToDisplayUnmasked, member.gender); 
-    
+// Recursive function to create the tree HTML
+function createTreeHtml(member) {
+    const nameToDisplay = maskFemaleName(member.full_name, member.gender);
     const hasChildren = member.children && member.children.length > 0;
     
-    // NEW: Gender-specific image/icon logic for tree view
     let imageHtml = '';
     if (member.image_url) {
         imageHtml = `<img src="${member.image_url}" alt="${nameToDisplay}" class="member-img">`;
     } else {
         const iconClass = member.gender && member.gender.toLowerCase() === 'f' ? 'fa-person-dress' : 'fa-person';
-        const iconColor = member.gender && member.gender.toLowerCase() === 'f' ? '#e74c3c' : '#3498db'; 
-        
-        imageHtml = `<div class="member-img-placeholder">
-                        <i class="fa-solid ${iconClass}" style="font-size: 30px; color: ${iconColor};"></i>
-                     </div>`;
+        const iconColor = member.gender && member.gender.toLowerCase() === 'f' ? '#e74c3c' : '#3498db';
+        imageHtml = `<div class="member-img-placeholder"> <i class="fa-solid ${iconClass}" style="font-size: 30px; color: ${iconColor};"></i> </div>`;
     }
     
-    let html = `<li id="member-${member.id}">
-                  <div class="member-card-wrapper" onclick="openMemberDetail(${member.id})">
-                      ${imageHtml}
-                      <span class="member-info">${nameToDisplay.toUpperCase()}</span>
-                      
-                      ${hasChildren ? 
-                        `<div class="collapse-btn" onclick="toggleChildren(this, event)">
-                            <i class="fa-solid fa-minus"></i>
-                         </div>` 
-                      : ''}
-                  </div>`;
-    
-    if(hasChildren){ 
-        html += "<ul>"; 
-        member.children.forEach(child => html += createTreeHtml(child)); 
-        html += "</ul>"; 
+    // NEW: Add class for deceased members
+    const isDeceased = !member.is_alive;
+    const cardExtraClass = isDeceased ? 'deceased-member' : '';
+
+    let html = `<li id="member-${member.id}" class="${hasChildren ? 'collapsed' : ''}"> 
+        <div class="member-card-wrapper ${cardExtraClass}" onclick="openMemberDetail(${member.id})">
+            ${imageHtml}
+            <span class="member-info">${nameToDisplay.toUpperCase()}</span>
+            ${hasChildren ? `<div class="collapse-btn" onclick="toggleChildren(this, event)"> <i class="fa-solid fa-plus"></i> </div>` : ''} 
+        </div>`;
+
+    if(hasChildren){
+        html += "<ul>";
+        member.children.forEach(child => html += createTreeHtml(child));
+        html += "</ul>";
     }
-    
-    html += "</li>"; 
+    html += "</li>";
     return html;
 }
 
-// Filters the tree based on search input (UPDATED to use masked name in display)
-function filterTree(searchText) {
-    const text = searchText.toLowerCase().trim();
+// NEW: Function to toggle visibility of deceased members via CSS class
+function toggleDeceasedVisibility(isChecked) {
     const container = document.getElementById('visualTreeContainer');
-    
-    if (!text || text.length < 2) {
-        if (currentRootId) loadFamilyTree(currentRootId);
-        return;
+    if (!isChecked) {
+        // If checkbox is unchecked, add class to hide
+        container.classList.add('hide-deceased');
+    } else {
+        // If checked, remove class to show
+        container.classList.remove('hide-deceased');
     }
-
-    const matchingMembers = allMembersData.filter(member => 
-        member.full_name && member.full_name.toLowerCase().includes(text)
-    );
-
-    if (matchingMembers.length === 0) {
-        container.innerHTML = `<div style='color:#777; padding:20px;'>کوئی ممبر نہیں ملا جس کا نام "${searchText}" ہو۔</div>`; 
-        return;
-    }
-
-    let searchTreeHtml = "<ul>";
-    matchingMembers.forEach(member => {
-        const nameToDisplayUnmasked = member.full_name || 'نامعلوم';
-        // APPLY MASKING HERE
-        const nameToDisplay = maskFemaleName(nameToDisplayUnmasked, member.gender);
-        
-        // Use member image/icon logic for search results too
-        let imageHtml = '';
-        if (member.image_url) {
-            imageHtml = `<img src="${member.image_url}" alt="${nameToDisplay}" class="member-img" style="width: 40px; height: 40px;">`;
-        } else {
-            const iconClass = member.gender && member.gender.toLowerCase() === 'f' ? 'fa-person-dress' : 'fa-person';
-            const iconColor = member.gender && member.gender.toLowerCase() === 'f' ? '#e74c3c' : '#3498db'; 
-            
-            imageHtml = `<div class="member-img-placeholder" style="width: 40px; height: 40px; border-width: 2px;">
-                            <i class="fa-solid ${iconClass}" style="font-size: 20px; color: ${iconColor};"></i>
-                         </div>`;
-        }
-        
-        const parent = allMembersData.find(m => m.id === member.parent_id);
-        const relationInfo = parent ? ` (S/D of ${parent.full_name})` : ' (Root)';
-
-        searchTreeHtml += `
-            <li id="member-search-${member.id}" style="padding: 15px 5px 0 5px;">
-                <div class="member-card-wrapper" onclick="openMemberDetail(${member.id})" style="min-width: 180px;">
-                    ${imageHtml}
-                    <span class="member-info" style="font-size: 0.9rem;">${nameToDisplay.toUpperCase()}</span>
-                    <span style="font-size: 0.7rem; color: #496075;">${relationInfo}</span>
-                </div>
-            </li>`;
-    });
-    searchTreeHtml += "</ul>";
-    
-    container.innerHTML = `<div style="text-align: center; margin-bottom: 10px; color: #34495e;">
-        **${matchingMembers.length}** ممبرز ملے: 
-        <i class="fa-solid fa-square-arrow-up-right" style="font-size: 10px; margin-left: 5px; color: #2ecc71;"></i>
-        <a href="#" onclick="loadFamilyTree(currentRootId); document.getElementById('memberSearchInput').value = ''; return false;" style="font-size: 11px; color: #3498db; text-decoration: underline;">
-            Back to Full Tree
-        </a>
-        </div>
-        ${searchTreeHtml}`;
-    container.querySelector('.family-tree > ul').style.flexWrap = 'wrap'; 
 }
 
+function toggleView() {
+    isHorizontal = !isHorizontal;
+    const container = document.getElementById('visualTreeContainer');
+    const toggleBtn = document.getElementById('toggleViewBtn');
 
-// Load only root members for dropdown (unchanged)
+    if (isHorizontal) {
+        container.classList.add('shajra-horizontal-tree');
+        container.classList.remove('family-tree');
+        toggleBtn.innerHTML = '<i class="fa-solid fa-compress"></i> Vertical';
+        // Horizontal view by default shows all children open
+        document.querySelectorAll('.collapse-btn').forEach(btn => {
+            btn.closest('li').classList.remove('collapsed');
+            btn.innerHTML = '<i class="fa-solid fa-minus"></i>';
+        });
+    } else {
+        container.classList.add('family-tree');
+        container.classList.remove('shajra-horizontal-tree');
+        loadFamilyTree(currentRootId); // Reload to reset collapse state
+    }
+}
+
+// Function to fetch and load root members for the dropdown (unchanged)
 async function loadRootMembers() {
+    // This is only for the dropdown, so we fetch only root names/IDs
     const { data, error } = await _supabase.from('family_data').select('id, full_name').is('parent_id', null).order('full_name', { ascending: true });
-
     const select = document.getElementById('rootMemberSelect');
     select.innerHTML = '<option value="">-- فیملی کا انتخاب کریں --</option>';
 
-    if (error) {
-        console.error("Error loading root members:", error);
-        return;
-    }
+    if (error) { console.error("Error loading root members:", error); return; }
 
     if (data && data.length > 0) {
         data.forEach(m => {
@@ -1611,149 +1759,277 @@ async function loadRootMembers() {
         select.value = data[0].id;
         loadFamilyTree(data[0].id);
     } else {
-        document.getElementById('visualTreeContainer').innerHTML = `<div style='color:#777; padding:20px;'>فیملی کا کوئی ممبر نہیں ملا۔ ایڈمن پینل سے ممبر شامل کریں۔</div>`; 
+        document.getElementById('visualTreeContainer').innerHTML = `<div style='color:#777; padding:20px;'>فیملی کا کوئی ممبر نہیں ملا۔ ایڈمن پینل سے ممبر شامل کریں۔</div>`;
         document.getElementById('currentFamilyName').innerHTML = `<i class="fa-solid fa-sitemap"></i> کوئی ڈیٹا نہیں`;
     }
 }
 
 // UPDATED FUNCTION: Load tree based on selected rootId and apply view state
-async function loadFamilyTree(rootId) {
+async function loadFamilyTree(rootId, pathIds = []) { // pathIds is new argument for expansion
     const container = document.getElementById('visualTreeContainer');
     const nameDisplay = document.getElementById('currentFamilyName');
-    currentRootId = rootId; 
-    
+    currentRootId = rootId;
+
     if (!rootId) {
-        container.innerHTML = `<div style='color:#777; padding:20px;'>فیملی دیکھنے کے لیے اوپر سے کوئی رُوٹ (بنیادی ممبر) منتخب کریں۔</div>`; 
-        nameDisplay.innerHTML = `<i class="fa-solid fa-sitemap"></i> خاندانی شجرہ`;
+        container.innerHTML = `<div style='color:#777; padding:20px;'>فیملی دیکھنے کے لیے اوپر سے کوئی رُوٹ (بنیادی ممبر) منتخب کریں۔</div>`;
+        nameDisplay.innerHTML = `<i class="fa-solid fa-sitemap"></i> فیملی کا شجرہ`;
         return;
     }
 
-    const selectedOption = document.getElementById('rootMemberSelect').options[document.getElementById('rootMemberSelect').selectedIndex];
-    const familyName = selectedOption ? selectedOption.text : "نامعلوم فیملی";
+    container.innerHTML = `<div style='text-align:center; padding:50px;'><i class="fa-solid fa-spinner fa-spin fa-2x"></i> Loading Family Tree...</div>`;
     
-    nameDisplay.innerHTML = `<i class="fa-solid fa-sitemap"></i> ${familyName} فیملی شجرہ`;
-    container.innerHTML = `<div style="color:#999; margin-top:50px;"><i class="fa-solid fa-spinner fa-spin"></i> شجرہ لوڈ ہو رہا ہے...</div>`;
+    // NEW: Fetch all data once if not yet loaded (for fast search/tree build)
+    if (allMembersData.length === 0) {
+        const { data: allData, error: allError } = await _supabase.from('family_data').select('*');
+        if (allError) { console.error("Error loading all data:", allError); return; }
+        allMembersData = allData || [];
+    }
 
-    const { data, error } = await _supabase.from('family_data').select('*');
-    allMembersData = data || []; 
+    const members = allMembersData; // Use the cached data
 
-    if (error) {
-        container.innerHTML = `<div style='color:red; padding:20px;'>Data لوڈ کرنے میں ایرر: ${error.message}</div>`;
+    const rootMember = members.find(m => m.id == rootId);
+    if (!rootMember) {
+        container.innerHTML = `<div style='color:red; padding:20px;'>Error: Root Member ID ${rootId} not found in data.</div>`;
         return;
     }
 
-    if(!data || data.length === 0){ 
-        container.innerHTML = `<div style='color:#777; padding:20px;'>فیملی کا کوئی ممبر نہیں ملا۔</div>`; 
-        return; 
+    nameDisplay.innerText = rootMember.full_name;
+
+    // --- Existing recursive builder function ---
+    function buildTree(parentId) {
+        const children = members.filter(m => m.parent_id == parentId);
+        if (children.length === 0) return null;
+
+        return children.map(child => {
+            return {
+                ...child,
+                children: buildTree(child.id) || []
+            };
+        });
     }
 
-    const map = {}; 
-    data.forEach(m => map[m.id] = {...m, children: []});
-    
-    let rootMember = null;
-    
-    data.forEach(m => { 
-        if(m.id == rootId){
-            rootMember = map[m.id];
-        } else if(m.parent_id && map[m.parent_id]){
-            map[m.parent_id].children.push(map[m.id]);
-        }
-    });
+    const treeData = {
+        ...rootMember,
+        children: buildTree(rootId) || []
+    };
 
-    if(!rootMember) {
-        container.innerHTML = `<div style='color:red; padding:20px;'>منتخب رُوٹ ممبر نہیں ملا۔</div>`;
-        return;
-    }
-
-    let treeHtml = "<ul>"; 
-    treeHtml += createTreeHtml(rootMember); 
-    treeHtml += "</ul>";
+    let treeHtml = '<ul>' + createTreeHtml(treeData) + '</ul>';
 
     container.innerHTML = treeHtml;
     
-    // Apply horizontal class if toggled
+    // Apply the deceased visibility filter after rendering
+    const deceasedToggle = document.getElementById('deceasedToggle');
+    if (deceasedToggle) {
+        toggleDeceasedVisibility(deceasedToggle.checked);
+    }
+
+
+    // Apply view state (Vertical/Horizontal)
     if (isHorizontal) {
         container.classList.add('shajra-horizontal-tree');
+        container.classList.remove('family-tree');
+        toggleBtn.innerHTML = '<i class="fa-solid fa-compress"></i> Vertical';
+        // In horizontal view, children are open by default
+        document.querySelectorAll('.collapse-btn').forEach(btn => {
+            btn.closest('li').classList.remove('collapsed');
+            btn.innerHTML = '<i class="fa-solid fa-minus"></i>';
+        });
     } else {
+        container.classList.add('family-tree');
         container.classList.remove('shajra-horizontal-tree');
     }
-}
-
-
-// --- Stats and Settings Logic (UPDATED to fetch 'female-pass') ---
-async function calcStats() {
-    const data = allMembersData.length > 0 ? allMembersData : (await _supabase.from('family_data').select('*')).data;
     
-    if(data){
-        document.getElementById('statTotal').innerText=data.length;
-        
-        const counts={}; data.forEach(m=>{ if(m.full_name){ const f=m.full_name.trim().split(' ')[0]; counts[f]=(counts[f]||0)+1;}});
-        let maxN="-",maxC=0; for(const[n,c] of Object.entries(counts)){ if(c>maxC){ maxC=c; maxN=n; } }
-        document.getElementById('statCommonName').innerText=`${maxN} (${maxC})`;
-        
-        let m=0,f=0,a=0,d=0; 
-        let oldestDob = '2100-01-01'; 
-        let youngestDob = '1900-01-01'; 
-        let oldestName = 'N/A';
-        let youngestName = 'N/A';
-
-        data.forEach(x=>{ 
-            if(x.gender) { 
-                if(x.gender.toLowerCase().startsWith('m')) m++; else f++; 
-            } 
-            if(x.is_alive!==undefined){ 
-                if(x.is_alive) a++; else d++; 
-            }
-            if(x.dob) {
-                if (x.dob < oldestDob) {
-                    oldestDob = x.dob;
-                    oldestName = x.full_name;
-                }
-                if (x.dob > youngestDob) {
-                    youngestDob = x.dob;
-                    youngestName = x.full_name;
+    // NEW: Tree Expansion Logic (Locate & Highlight)
+    if(pathIds.length > 0) {
+        setTimeout(() => {
+            // Path IDs contains [RootId, MemberA, MemberB, TargetId]
+            // We need to ensure all elements up to the target are expanded.
+            
+            // Toggle the collapse status of all parents in the path
+            for (let i = 0; i < pathIds.length; i++) {
+                const currentId = pathIds[i];
+                const currentElement = document.getElementById(`member-${currentId}`);
+                
+                // If the element is a parent (has children) and is collapsed, expand it.
+                if (currentElement && currentElement.classList.contains('collapsed')) {
+                    const collapseBtn = currentElement.querySelector('.collapse-btn');
+                    if (collapseBtn) {
+                        const dummyEvent = { stopPropagation: () => {} };
+                        toggleChildren(collapseBtn, dummyEvent);
+                    }
                 }
             }
-        });
-
-        document.getElementById('statMale').innerText=`${m} / ${f}`; 
-        document.getElementById('statAlive').innerText=`${a} / ${d}`; 
-        
-        document.getElementById('statOldest').innerText=`${oldestName}`; 
-        document.getElementById('statYoungest').innerText=`${youngestName}`; 
+            
+            // Highlight the target member (the last ID in pathIds)
+            const targetMemberId = pathIds[pathIds.length - 1];
+            const targetCard = document.querySelector(`#member-${targetMemberId} .member-card-wrapper`);
+            if (targetCard) {
+                // Ensure the element is visible by scrolling the container
+                targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                
+                targetCard.classList.add('highlighted-member');
+                // Remove highlight after 5 seconds
+                setTimeout(() => {
+                    targetCard.classList.remove('highlighted-member');
+                }, 5000);
+            }
+        }, 50);
     }
 }
 
-async function loadSiteSettings() {
-    // Select all columns to ensure 'female-pass' is fetched
-    const { data } = await _supabase.from('site_config').select('*').limit(1); 
-    
-    if(data?.[0]){
-        // Store the passcode fetched from the database column 'female-pass'
-        femalePasscode = data[0]['female-pass'] || data[0].female_pass || null; 
-        
-        // Existing settings logic
-        document.getElementById('mainTitle').innerText=data[0].site_name;
-        document.getElementById('dynamicUrduText').innerText=data[0].about_urdu;
-        document.getElementById('dynamicAboutText').innerText=data[0].contact_desc;
-        document.getElementById('dynamicPhone').innerText=data[0].phone;
-        document.getElementById('dynamicWhatsapp').href = `https://wa.me/${data[0].whatsapp.replace(/[^0-9+]/g, '')}`;
-        document.getElementById('featuresList').innerHTML=(data[0].features||"").split(',').map(f=>`<li>${f}</li>`).join('');
-    } else {
-        // Fix for loading issue when site_config is empty
-        document.getElementById('mainTitle').innerText = 'Family Shajra';
-        femalePasscode = null; 
-    }
+
+// NEW: Helper function to get the current root member and all their descendants.
+function getDescendantsAndSelf(rootId) {
+    if (!rootId || allMembersData.length === 0) return [];
+
+    const rootMember = allMembersData.find(m => m.id == rootId);
+    if (!rootMember) return [];
+
+    const scopedMembers = [rootMember];
+    const queue = [rootId];
+    const processedIds = new Set([rootId]);
+
+    // Use a Breadth-First Search (BFS) approach to find all children recursively
+    let head = 0;
+    while (head < queue.length) {
+        const parentId = queue[head++];
+        
+        allMembersData.forEach(member => {
+            if (member.parent_id == parentId && !processedIds.has(member.id)) {
+                processedIds.add(member.id);
+                scopedMembers.push(member);
+                queue.push(member.id);
+            }
+        });
+    }
+
+    return scopedMembers;
 }
 
-// ----------------------------------------------------
-// *** DOMContentLoaded: Best Practice Initialization ***
-// ----------------------------------------------------
-document.addEventListener('DOMContentLoaded', () => {
-    loadSiteSettings();
-    loadRootMembers(); 
-    setupSortListeners(); 
-});
+// --- Analytics/Stats Functions ---
+// UPDATED: Now accepts rootId to scope the data
+async function calcStats(rootId) { 
+    // If allMembersData is empty, fetch it first (unchanged logic)
+    if (allMembersData.length === 0) {
+        const { data, error } = await _supabase.from('family_data').select('*');
+        if (error) { console.error("Error loading stats data:", error); return; }
+        allMembersData = data || [];
+    }
+    
+    // --- NEW: Filter data based on the current root ---
+    const membersInBranch = getDescendantsAndSelf(rootId);
+    const data = membersInBranch;
+    
+    const rootMember = allMembersData.find(m => m.id == rootId);
+    const rootName = rootMember ? maskFemaleName(rootMember.full_name, rootMember.gender) : 'Puri Family';
+    
+    // Update the modal title to show context
+    const contextTitleElement = document.getElementById('statsContextTitle');
+    if (rootId) {
+        contextTitleElement.innerHTML = `(<span style="font-weight: 700;">${rootName}</span> ki nasl)`;
+    } else {
+        contextTitleElement.innerText = '(Puri Family)';
+    }
+    // --- END NEW ---
+
+    // Check if there is data to process
+    if (data.length === 0) {
+         document.getElementById('statTotal').innerText = 0;
+         document.getElementById('statMale').innerText = '0 / 0';
+         document.getElementById('statAlive').innerText = '0 / 0';
+         document.getElementById('statOldest').innerText = 'N/A';
+         document.getElementById('statYoungest').innerText = 'N/A';
+         return; // Exit if no data
+    }
+    
+    // The rest of the logic runs on the 'data' array (membersInBranch)
+    let total = data.length;
+    let m = 0; // Male count
+    let f = 0; // Female count
+    let a = 0; // Alive count
+    let d = 0; // Deceased count
+
+    let oldestDob = '2100-01-01'; // Future date (to find the earliest DOB)
+    let oldestMember = null;
+    let youngestDob = '1900-01-01'; // Past date (to find the latest DOB)
+    let youngestMember = null;
+
+    data.forEach(x=>{
+        // Gender counting
+        if(x.gender) {
+            if(x.gender.toLowerCase().startsWith('m')) m++;
+            else f++;
+        }
+
+        // Alive/Deceased counting
+        if(x.is_alive!==undefined){
+            if(x.is_alive) a++;
+            else d++;
+        }
+
+        // Oldest/Youngest calculation
+        if(x.dob) {
+            // Check for oldest (earliest date)
+            if (x.dob < oldestDob) {
+                oldestDob = x.dob;
+                oldestMember = x;
+            }
+            // Check for youngest (latest date)
+            if (x.dob > youngestDob) {
+                youngestDob = x.dob;
+                youngestMember = x;
+            }
+        }
+    });
+
+    // Displaying results in the modal (using IDs in HTML)
+    document.getElementById('statTotal').innerText = total;
+    document.getElementById('statMale').innerText = `${m} / ${f}`;
+    document.getElementById('statAlive').innerText = `${a} / ${d}`;
+    
+    // Masking and displaying oldest/youngest members
+    
+    if (oldestMember) {
+        document.getElementById('statOldest').innerText = maskFemaleName(oldestMember.full_name, oldestMember.gender);
+    } else {
+        document.getElementById('statOldest').innerText = 'N/A';
+    }
+    
+    if (youngestMember) {
+        document.getElementById('statYoungest').innerText = maskFemaleName(youngestMember.full_name, youngestMember.gender);
+    } else {
+        document.getElementById('statYoungest').innerText = 'N/A';
+    }
+}
+
+
+// --- Site Initialization ---
+async function loadSiteSettings() {
+    // Select all columns to ensure 'female-pass' is fetched
+    const { data } = await _supabase.from('site_config').select('*').limit(1); 
+    
+    if(data?.[0]){
+        // Store the passcode fetched from the database column 'female-pass'
+        femalePasscode = data[0]['female-pass'] || data[0].female_pass || null; 
+        
+        // Existing settings logic
+        document.getElementById('mainTitle').innerText=data[0].site_name;
+        document.getElementById('dynamicUrduText').innerText=data[0].about_urdu;
+        // The HTML structure has been updated, dynamicAboutText is now centered
+        document.getElementById('dynamicAboutText').innerText=data[0].contact_desc; 
+        // The HTML structure has been updated, dynamicPhone is now centered without "Contact:"
+        document.getElementById('dynamicPhone').innerText=data[0].phone; 
+        document.getElementById('dynamicWhatsapp').href = `https://wa.me/${data[0].whatsapp.replace(/[^0-9+]/g, '')}`;
+        document.getElementById('featuresList').innerHTML=(data[0].features||"").split(',').map(f=>`<li>${f.trim()}</li>`).join('');
+    }
+}
+
+// Initial load sequence
+window.onload = function() {
+    loadSiteSettings();
+    loadRootMembers();
+};
+
 </script>
 </body>
 </html>

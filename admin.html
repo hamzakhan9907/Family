@@ -16,7 +16,7 @@
         const _supabase = supabase.createClient(supabaseUrl, SUPABASE_ANON_KEY);
         
         // --- ADDED SESSION CONSTANT (FIXED: 1 HOUR) ---
-        const SESSION_TIMEOUT_MS = 60 * 05 * 1000; // 60 minutes (1 hour) in milliseconds
+        const SESSION_TIMEOUT_MS = 60 * 60 * 1000; // 60 minutes (1 hour) in milliseconds
         // ----------------------------------------------
 
         // --- NEW CONSTANT FOR STORAGE (Using user's bucket name) ---
@@ -29,6 +29,13 @@
         let settingsLoaded = false; 
         // ---------------------------------
         
+        // --- NEW PAGINATION VARIABLES ---
+        let allMembers = [];
+        let membersPerPage = 20; // Default members per page
+        let currentPage = 1;
+        let currentFilteredMembers = []; // List after search filtering
+        // ---------------------------------
+
         // --- AUTH & SETUP ---
         // Helper function to handle UI changes and initialization
         function togglePanelDisplay(status) {
@@ -174,7 +181,6 @@
 
 
         // --- DATA MANAGEMENT (CRUD) ---
-        let allMembers = [];
         let editingMemberId = null;
 
         async function loadMembers() {
@@ -186,7 +192,12 @@
             }
             
             allMembers = data;
-            renderMemberTable(data);
+            
+            // NEW: Set the initial filtered list to all members, reset page, and render first page
+            currentFilteredMembers = allMembers; 
+            currentPage = 1; 
+            renderMemberTable(currentFilteredMembers);
+            
             populateParentSelects();
             
             // NEW: Clear the search box when members are reloaded
@@ -195,17 +206,25 @@
             }
         }
         
-        // (Render Member Table function MODIFIED for Mobile Card View data labels)
-        function renderMemberTable(members) {
+        // (Render Member Table function MODIFIED for Pagination)
+        function renderMemberTable(membersToRender) {
             const tableBody = document.getElementById('memberTableBody');
             tableBody.innerHTML = ''; 
             
-            if (members.length === 0) {
+            const totalItems = membersToRender.length;
+            const startIndex = (currentPage - 1) * membersPerPage;
+            const endIndex = startIndex + membersPerPage;
+            
+            // Slice the array for the current page
+            const pagedMembers = membersToRender.slice(startIndex, endIndex);
+
+            if (totalItems === 0) {
                  tableBody.innerHTML = '<tr><td colspan="8" style="text-align:center; color: var(--color-danger); font-weight: 600;">No members found matching the current filter.</td></tr>';
+                 renderPagination(0);
                  return;
             }
 
-            members.forEach(member => {
+            pagedMembers.forEach(member => {
                 const parent = allMembers.find(m => m.id === member.parent_id);
                 const spouse = allMembers.find(m => m.id === member.spouse_id);
                 
@@ -226,6 +245,9 @@
                     </td>
                 `;
             });
+            
+            // NEW: Render pagination controls
+            renderPagination(totalItems);
         }
         
         // (Populate Parent/Spouse Selects function remains the same)
@@ -279,29 +301,100 @@
         }
         // ---------------------------------------------------------------------
 
-        // --- FILTERING FUNCTION FOR MEMBER LIST (NEW) ---
+        // --- FILTERING FUNCTION FOR MEMBER LIST (MODIFIED for Pagination) ---
         function filterMemberList(filterText) {
             const filter = getSearchableText(filterText); 
             
             // If the filter is empty, show all members
             if (!filter) {
-                renderMemberTable(allMembers);
-                return;
+                currentFilteredMembers = allMembers;
+            } else {
+                 const filteredMembers = allMembers.filter(member => {
+                    // Get the searchable version of the member's name
+                    const searchableName = getSearchableText(member.full_name);
+                    
+                    // Check if the searchable name contains the searchable filter text
+                    return searchableName.includes(filter);
+                });
+                currentFilteredMembers = filteredMembers;
             }
-
-            const filteredMembers = allMembers.filter(member => {
-                // Get the searchable version of the member's name
-                const searchableName = getSearchableText(member.full_name);
-                
-                // Check if the searchable name contains the searchable filter text
-                return searchableName.includes(filter);
-            });
-
-            renderMemberTable(filteredMembers);
+            
+            // NEW: Reset to first page of the filtered list
+            currentPage = 1;
+            renderMemberTable(currentFilteredMembers);
         }
         // ----------------------------------------
         
-        // --- FILTERING FUNCTION (for Parent/Spouse Selects) ---
+        // --- PAGINATION CONTROL FUNCTIONS (NEW) ---
+        function renderPagination(totalItems) {
+            const paginationContainer = document.getElementById('paginationControls');
+            paginationContainer.innerHTML = ''; 
+            
+            const totalPages = Math.ceil(totalItems / membersPerPage);
+
+            if (totalPages <= 1) {
+                return;
+            }
+
+            const prevDisabled = currentPage === 1 ? 'disabled' : '';
+            const nextDisabled = currentPage === totalPages ? 'disabled' : '';
+
+            // Previous Button
+            paginationContainer.innerHTML += `<button class="pagination-btn" onclick="goToPage(${currentPage - 1})" ${prevDisabled}>&laquo; Previous</button>`;
+
+            // Page Numbers (simplified: current page and neighbours)
+            let startPage = Math.max(1, currentPage - 1);
+            let endPage = Math.min(totalPages, currentPage + 1);
+            
+            if (currentPage === 1 && totalPages >= 3) endPage = Math.min(totalPages, 3);
+            if (currentPage === totalPages && totalPages >= 3) startPage = Math.max(1, totalPages - 2);
+
+            if (startPage > 1) {
+                paginationContainer.innerHTML += `<button class="pagination-btn" onclick="goToPage(1)">1</button>`;
+                if (startPage > 2) {
+                    paginationContainer.innerHTML += `<span class="pagination-dots">...</span>`;
+                }
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                const activeClass = i === currentPage ? 'active' : '';
+                paginationContainer.innerHTML += `<button class="pagination-btn ${activeClass}" onclick="goToPage(${i})">${i}</button>`;
+            }
+            
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                     paginationContainer.innerHTML += `<span class="pagination-dots">...</span>`;
+                }
+                 // Last page button
+                if (endPage < totalPages || (endPage === totalPages -1 && endPage > startPage)) {
+                     const activeClass = totalPages === currentPage ? 'active' : '';
+                     paginationContainer.innerHTML += `<button class="pagination-btn ${activeClass}" onclick="goToPage(${totalPages})">${totalPages}</button>`;
+                }
+            }
+            
+            // Next Button
+            paginationContainer.innerHTML += `<button class="pagination-btn" onclick="goToPage(${currentPage + 1})" ${nextDisabled}>Next &raquo;</button>`;
+            
+            // Status text
+            const start = (currentPage - 1) * membersPerPage + 1;
+            const end = Math.min(currentPage * membersPerPage, totalItems);
+            paginationContainer.innerHTML += `<span class="pagination-info">Showing ${start} - ${end} of ${totalItems}</span>`;
+        }
+
+        function goToPage(page) {
+            const totalPages = Math.ceil(currentFilteredMembers.length / membersPerPage);
+            
+            if (page < 1 || page > totalPages) return;
+            
+            currentPage = page;
+            renderMemberTable(currentFilteredMembers);
+            
+            // Scroll back to the top of the list/section
+            document.getElementById('memberListSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        // ----------------------------------------
+        
+        // --- FILTERING FUNCTION (for Parent/Spouse Selects) (Remains the same) ---
         function filterSelectOptions(selectId, filterText) {
             const select = document.getElementById(selectId);
             const options = select.options;
@@ -1054,6 +1147,43 @@
             color: var(--color-text-light);
             cursor: default;
         }
+        
+        /* ----------------- PAGINATION CONTROLS (NEW) ----------------- */
+        .pagination-btn {
+            background-color: #F3F4F6;
+            color: var(--color-text-dark);
+            padding: 8px 14px;
+            border: 1px solid #D1D5DB;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background-color 0.2s, border-color 0.2s;
+            line-height: 1; /* Fix vertical alignment */
+        }
+        .pagination-btn:hover:not(:disabled) {
+            background-color: #E5E7EB;
+            border-color: var(--color-primary);
+        }
+        .pagination-btn.active {
+            background-color: var(--color-primary);
+            color: white;
+            border-color: var(--color-primary);
+        }
+        .pagination-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        .pagination-info {
+            font-size: 14px;
+            color: var(--color-text-light);
+            font-weight: 500;
+        }
+        .pagination-dots {
+            color: var(--color-text-light);
+            font-size: 18px;
+            line-height: 1;
+        }
 
         /* ----------------- MOBILE TABLE (CARD VIEW) ----------------- */
         @media screen and (max-width: 800px) {
@@ -1241,6 +1371,8 @@
             
             <label for="memberSearchInput" style="margin-bottom: 5px; font-weight: 600; color: var(--color-text-dark); font-size: 15px;">Search Member by Name (English or Urdu Roman):</label>
             <input type="text" id="memberSearchInput" placeholder="Type name here to filter the list (e.g., 'ali' or 'احمد')" onkeyup="filterMemberList(this.value)" style="width: 100%; padding: 12px; border: 1px solid #D1D5DB; border-radius: 8px; margin-bottom: 20px; box-sizing: border-box;">
+            <div id="paginationControls" style="display: flex; justify-content: flex-start; align-items: center; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+                </div>
             <div class="table-responsive">
                 <table class="member-table">
                     <thead>

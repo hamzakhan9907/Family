@@ -16,7 +16,7 @@
         const _supabase = supabase.createClient(supabaseUrl, SUPABASE_ANON_KEY);
         
         // --- ADDED SESSION CONSTANT (FIXED: 1 HOUR) ---
-        const SESSION_TIMEOUT_MS = 60 * 60 * 1000; // 60 minutes (1 hour) in milliseconds
+        const SESSION_TIMEOUT_MS = 60 * 05 * 1000; // 60 minutes (1 hour) in milliseconds
         // ----------------------------------------------
 
         // --- NEW CONSTANT FOR STORAGE (Using user's bucket name) ---
@@ -188,27 +188,39 @@
             allMembers = data;
             renderMemberTable(data);
             populateParentSelects();
+            
+            // NEW: Clear the search box when members are reloaded
+            if (document.getElementById('memberSearchInput')) {
+                document.getElementById('memberSearchInput').value = '';
+            }
         }
         
-        // (Render Member Table function remains the same)
+        // (Render Member Table function MODIFIED for Mobile Card View data labels)
         function renderMemberTable(members) {
             const tableBody = document.getElementById('memberTableBody');
             tableBody.innerHTML = ''; 
             
+            if (members.length === 0) {
+                 tableBody.innerHTML = '<tr><td colspan="8" style="text-align:center; color: var(--color-danger); font-weight: 600;">No members found matching the current filter.</td></tr>';
+                 return;
+            }
+
             members.forEach(member => {
                 const parent = allMembers.find(m => m.id === member.parent_id);
                 const spouse = allMembers.find(m => m.id === member.spouse_id);
                 
                 const row = tableBody.insertRow();
+                // Add class for striped effect
+                row.className = row.rowIndex % 2 === 0 ? 'even-row' : 'odd-row'; 
                 row.innerHTML = `
-                    <td class="admin-table-cell">${member.id}</td>
-                    <td class="admin-table-cell">${member.full_name || 'N/A'}</td>
-                    <td class="admin-table-cell">${parent ? parent.full_name : 'Root'}</td>
-                    <td class="admin-table-cell">${member.dob || 'N/A'}</td>
-                    <td class="admin-table-cell">${member.gender || 'N/A'}</td>
-                    <td class="admin-table-cell">${member.is_alive ? 'Yes' : 'No'}</td>
-                    <td class="admin-table-cell">${spouse ? spouse.full_name : (member.spouse_external_name || 'N/A')}</td>
-                    <td class="admin-table-cell admin-actions">
+                    <td class="admin-table-cell" data-label="ID">${member.id}</td>
+                    <td class="admin-table-cell" data-label="Full Name">${member.full_name || 'N/A'}</td>
+                    <td class="admin-table-cell" data-label="Parent">${parent ? parent.full_name : 'Root'}</td>
+                    <td class="admin-table-cell" data-label="DOB">${member.dob || 'N/A'}</td>
+                    <td class="admin-table-cell" data-label="Gender">${member.gender || 'N/A'}</td>
+                    <td class="admin-table-cell" data-label="Alive">${member.is_alive ? 'Yes' : 'No'}</td>
+                    <td class="admin-table-cell" data-label="Spouse">${spouse ? spouse.full_name : (member.spouse_external_name || 'N/A')}</td>
+                    <td class="admin-table-cell admin-actions" data-label="Actions">
                         <button onclick="editMember(${member.id})" class="edit-btn">Edit</button>
                         <button onclick="deleteMember(${member.id})" class="delete-btn">Delete</button>
                     </td>
@@ -226,14 +238,105 @@
             
             allMembers.forEach(member => {
                 const parentOption = new Option(member.full_name, member.id);
+                // Store the searchable text on the option for fast filtering
+                parentOption.setAttribute('data-search', getSearchableText(member.full_name)); 
                 if (member.id === currentParentId) { parentOption.selected = true; }
                 parentSelect.add(parentOption);
                 
                 const spouseOption = new Option(member.full_name, member.id);
+                // Store the searchable text on the option for fast filtering
+                spouseOption.setAttribute('data-search', getSearchableText(member.full_name));
                 if (member.id === currentSpouseId) { spouseOption.selected = true; }
                 spouseSelect.add(spouseOption);
             });
         }
+
+        // --- NEW TRANS-LITERATION/SEARCHABLE TEXT HELPER (Used by both member list and select boxes) ---
+        function getSearchableText(text) {
+            if (!text) return '';
+            let s = text.toLowerCase().trim();
+
+            const urduToRomanMap = {
+                'ا': 'a', 'آ': 'aa', 'ب': 'b', 'پ': 'p', 'ت': 't', 'ٹ': 't', 
+                'ث': 's', 'ج': 'j', 'چ': 'ch', 'ح': 'h', 'خ': 'kh', 'د': 'd', 
+                'ڈ': 'd', 'ذ': 'z', 'ر': 'r', 'ڑ': 'r', 'ز': 'z', 'ژ': 'zh', 
+                'س': 's', 'ش': 'sh', 'ص': 's', 'ض': 'z', 'ط': 't', 'ظ': 'z', 
+                'ع': 'a', 'غ': 'gh', 'ف': 'f', 'ق': 'q', 'ک': 'k', 'گ': 'g', 
+                'ل': 'l', 'م': 'm', 'ن': 'n', 'و': 'w', 'ہ': 'h', 'ھ': 'h', 
+                'ی': 'y', 'ے': 'y', 'ء': '', 'ؤ': 'w', 'ئ': 'y',
+            };
+            
+            let romanized = '';
+            for (const char of s) {
+                if (urduToRomanMap[char]) {
+                    romanized += urduToRomanMap[char];
+                } else {
+                    romanized += char;
+                }
+            }
+            
+            return romanized.replace(/[^a-z0-9]/g, '').trim(); 
+        }
+        // ---------------------------------------------------------------------
+
+        // --- FILTERING FUNCTION FOR MEMBER LIST (NEW) ---
+        function filterMemberList(filterText) {
+            const filter = getSearchableText(filterText); 
+            
+            // If the filter is empty, show all members
+            if (!filter) {
+                renderMemberTable(allMembers);
+                return;
+            }
+
+            const filteredMembers = allMembers.filter(member => {
+                // Get the searchable version of the member's name
+                const searchableName = getSearchableText(member.full_name);
+                
+                // Check if the searchable name contains the searchable filter text
+                return searchableName.includes(filter);
+            });
+
+            renderMemberTable(filteredMembers);
+        }
+        // ----------------------------------------
+        
+        // --- FILTERING FUNCTION (for Parent/Spouse Selects) ---
+        function filterSelectOptions(selectId, filterText) {
+            const select = document.getElementById(selectId);
+            const options = select.options;
+            
+            // Standardize the search query (e.g., "ali" -> "ali")
+            const filter = getSearchableText(filterText); 
+
+            for (let i = 0; i < options.length; i++) {
+                const option = options[i];
+                
+                // Keep the first option (No Parent/No Spouse) always visible
+                if (i === 0) {
+                    option.style.display = 'block';
+                    continue; 
+                }
+
+                // Get the searchable text from the data attribute (pre-calculated Urdu->Roman or just the name)
+                const searchableName = option.getAttribute('data-search') || getSearchableText(option.text);
+
+                // If filter is empty, show all. If searchable name contains the filter, show it.
+                if (filter === '' || searchableName.includes(filter)) {
+                    option.style.display = 'block';
+                } else {
+                    option.style.display = 'none';
+                }
+            }
+            
+            // If the currently selected option is hidden, reset selection to the first option
+            const currentlySelectedOption = select.selectedIndex > -1 ? select.options[select.selectedIndex] : null;
+            
+            if (currentlySelectedOption && currentlySelectedOption.style.display === 'none') {
+                 select.selectedIndex = 0; // Select the 'No Parent/No Spouse' option
+            }
+        }
+        // ----------------------------------------
         
         // --- NEW IMAGE HELPER FUNCTIONS ---
         function resetImageFields() {
@@ -242,6 +345,12 @@
             document.getElementById('imagePreviewContainer').style.display = 'none';
             document.getElementById('currentImagePreview').src = '';
             document.getElementById('imageStatus').innerText = 'Current Image: ';
+            
+            // NEW: Also clear the search fields when resetting the form
+            document.getElementById('parentSearch').value = '';
+            filterSelectOptions('parentID', '');
+            document.getElementById('spouseSearch').value = '';
+            filterSelectOptions('spouseID', '');
         }
 
         // Function to mark image for removal/clearing
@@ -264,9 +373,9 @@
             
             // NEW: Reset relation to default and call image reset
             document.getElementById('relation').value = ''; 
-            resetImageFields(); 
+            resetImageFields(); // Contains search reset
             
-            populateParentSelects(); 
+            loadMembers(); // Call loadMembers to fetch fresh data and populate selects with data-search attribute
             showSection('memberManagementSection'); 
         }
 
@@ -326,7 +435,6 @@
                 relation: document.getElementById('relation').value.trim() || null, 
                 gender: document.getElementById('gender').value || null,
                 dob: document.getElementById('dob').value || null,
-                // REMOVED: phone: document.getElementById('phone').value.trim() || null, 
                 image_url: imageURLToSave, // FINAL Image URL
                 is_alive: document.getElementById('isAlive').checked,
                 parent_id: document.getElementById('parentID').value || null,
@@ -372,12 +480,11 @@
             document.getElementById('relation').value = member.relation || ''; 
             document.getElementById('gender').value = member.gender || '';
             document.getElementById('dob').value = member.dob || '';
-            // REMOVED: document.getElementById('phone').value = member.phone || '';
             document.getElementById('isAlive').checked = member.is_alive === true;
             document.getElementById('spouseExternalName').value = member.spouse_external_name || '';
 
             // --- NEW: Handle Image Preview and Existing URL ---
-            resetImageFields(); // Pehle reset karein
+            resetImageFields(); // Pehle reset karein (This also clears search bars)
             if (member.image_url) {
                 document.getElementById('existingImageURL').value = member.image_url;
                 document.getElementById('currentImagePreview').src = member.image_url;
@@ -410,10 +517,10 @@
             }
         }
         
-        // --- SITE SETTINGS MANAGEMENT (Updated: Phone/Whatsapp removed) ---
+        // --- SITE SETTINGS MANAGEMENT (Updated to include new fields) ---
         async function loadSiteConfig() {
-            // UPDATED: Selecting only site_name, about_urdu, contact_desc, features, female_pass
-            const { data, error } = await _supabase.from('site_config').select('site_name, about_urdu, contact_desc, features, female_pass').limit(1);
+            // UPDATED: Selecting all config fields including new ones
+            const { data, error } = await _supabase.from('site_config').select('site_name, about_urdu, contact_desc, features, female_pass, phone, whatsapp, site_color, hide_dob_for_living, welcome_message').limit(1);
             if (error) {
                 console.error("Error loading site config:", error);
                 return;
@@ -424,7 +531,14 @@
                 document.getElementById('aboutUrdu').value = config.about_urdu || '';
                 document.getElementById('contactDesc').value = config.contact_desc || '';
                 document.getElementById('features').value = config.features || '';
+                document.getElementById('phoneNumber').value = config.phone || '';
+                document.getElementById('whatsappNumber').value = config.whatsapp || '';
                 
+                // NEW: Load new settings
+                document.getElementById('siteColor').value = config.site_color || '#4338CA'; // Default: Indigo
+                document.getElementById('hideDOB').checked = config.hide_dob_for_living === true;
+                document.getElementById('welcomeMessage').value = config.welcome_message || '';
+
                 // Load female passcode and store it locally
                 femalePasscodeLocal = config.female_pass || null; 
                 if (document.getElementById('currentFemalePasscodeDisplay')) {
@@ -436,7 +550,7 @@
             settingsLoaded = true;
         }
 
-        // (Save Site Config function remains the same)
+        // (Save Site Config function updated)
         async function saveSiteConfig() {
             if (!settingsLoaded) {
                  alert("Settings not fully loaded yet. Please wait.");
@@ -448,6 +562,13 @@
                 about_urdu: document.getElementById('aboutUrdu').value.trim() || null,
                 contact_desc: document.getElementById('contactDesc').value.trim() || null,
                 features: document.getElementById('features').value.trim() || null,
+                phone: document.getElementById('phoneNumber').value.trim() || null,
+                whatsapp: document.getElementById('whatsappNumber').value.trim() || null,
+                
+                // NEW: Save new settings
+                site_color: document.getElementById('siteColor').value.trim() || '#4338CA',
+                hide_dob_for_living: document.getElementById('hideDOB').checked,
+                welcome_message: document.getElementById('welcomeMessage').value.trim() || null,
             };
 
             const { data: existing } = await _supabase.from('site_config').select('id').limit(1);
@@ -586,13 +707,58 @@
     <script src="https://cdn.tailwindcss.com"></script>
 
     <style>
+        /* ----------------- COLOR PALETTE ----------------- */
+        :root {
+            --color-primary: #4338CA; /* Deep Indigo (Default) */
+            --color-secondary: #10B981; /* Emerald Green */
+            --color-danger: #EF4444; /* Red */
+            --color-warning: #FBBF24; /* Amber */
+            --color-background: #F9FAFB; /* Light Grey */
+            --color-text-dark: #1F2937; /* Dark Grey */
+            --color-text-light: #6B7280; /* Medium Grey */
+        }
+        
         /* ----------------- GLOBAL ----------------- */
-        body { font-family: 'Poppins', sans-serif; margin: 0; background-color: #f4f7f6; }
-        .container { max-width: 1200px; margin: 0 auto; padding: 10px; }
-        .header { background-color: #34495e; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .header h1 { margin: 0; font-size: 20px; }
-        .logout-btn { background-color: #e74c3c; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; transition: background-color 0.3s; }
-        .logout-btn:hover { background-color: #c0392b; }
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            margin: 0; 
+            background-color: var(--color-background); 
+            color: var(--color-text-dark);
+        }
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 10px; 
+        }
+        
+        /* ----------------- HEADER ----------------- */
+        .header { 
+            background-color: var(--color-primary); 
+            color: white; 
+            padding: 18px 25px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15); 
+        }
+        .header h1 { 
+            margin: 0; 
+            font-size: 24px; 
+            font-weight: 700;
+        }
+        .logout-btn { 
+            background-color: var(--color-danger); 
+            color: white; 
+            border: none; 
+            padding: 10px 18px; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            transition: background-color 0.3s; 
+            font-weight: 600;
+        }
+        .logout-btn:hover { 
+            background-color: #DC2626; /* Slightly darker red */
+        }
 
         /* ----------------- LOGIN PAGE ----------------- */
         #loginPage { 
@@ -600,72 +766,84 @@
             justify-content: center; 
             align-items: center; 
             min-height: 100vh; 
-            background: linear-gradient(135deg, #34495e, #2c3e50);
+            background: #E0E7FF; /* Light Indigo background */
         }
         .login-box { 
             background: white; 
-            padding: 30px; 
-            border-radius: 12px; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2); 
+            padding: 40px; 
+            border-radius: 16px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15); 
             width: 90%; 
             max-width: 400px; 
             text-align: center;
         }
         .login-box h2 { 
-            color: #2c3e50; 
-            margin-bottom: 25px; 
-            border-bottom: 3px solid #3ecf8e; 
+            color: var(--color-text-dark); 
+            margin-bottom: 30px; 
+            border-bottom: 4px solid var(--color-secondary); 
             display: inline-block; 
-            padding-bottom: 5px; 
+            padding-bottom: 8px; 
+            font-size: 24px;
         }
         .login-box input[type="password"] {
             width: 100%;
             padding: 12px;
-            margin-bottom: 20px;
-            border: 1px solid #ddd;
+            margin-bottom: 25px;
+            border: 2px solid #D1D5DB;
             border-radius: 8px;
             box-sizing: border-box;
             font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        .login-box input[type="password"]:focus {
+             border-color: var(--color-primary);
         }
         .login-box button {
             width: 100%;
-            background-color: #3498db;
+            background-color: var(--color-primary);
             color: white;
-            padding: 12px;
+            padding: 14px;
             border: none;
             border-radius: 8px;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 18px;
+            font-weight: 600;
             transition: background-color 0.3s;
         }
         .login-box button:hover {
-            background-color: #2980b9;
+            background-color: #3730A3; /* Darker Indigo */
         }
 
-        /* ----------------- ADMIN PANEL NEW STYLE ----------------- */
+        /* ----------------- ADMIN PANEL NAVIGATION ----------------- */
         .admin-nav-button-container {
             display: flex;
-            flex-direction: column; /* Stack buttons vertically on mobile */
-            gap: 10px;
-            margin: 20px 0;
+            flex-direction: column; 
+            gap: 12px;
+            margin: 25px 0;
         }
         .admin-nav-button {
-            background-color: #3498db;
+            background-color: var(--color-primary);
             color: white;
             padding: 15px 10px;
             border: none;
-            border-radius: 8px;
+            border-radius: 10px;
             cursor: pointer;
             font-size: 16px;
             font-weight: 600;
-            width: 100%; /* Full width on mobile */
-            transition: background-color 0.3s;
+            width: 100%;
+            transition: background-color 0.3s, transform 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .admin-nav-button i {
+            margin-right: 10px;
         }
         .admin-nav-button:hover {
-            background-color: #2980b9;
+            background-color: #3730A3;
+            transform: translateY(-2px);
         }
 
-        /* Adjust button layout for wider screens (5 buttons: 19% each) */
         @media (min-width: 600px) {
             .admin-nav-button-container {
                 flex-direction: row;
@@ -677,64 +855,115 @@
             }
         }
         
+        /* ----------------- ADMIN SECTIONS (CARDS) ----------------- */
         .admin-section {
             background: white;
-            padding: 20px;
-            margin: 20px 0;
-            border-radius: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            border-top: 5px solid #3ecf8e;
-            display: none; /* Hidden by default, shown by JS */
+            padding: 30px;
+            margin: 25px 0;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            border-top: 5px solid var(--color-secondary);
+            display: none; 
         }
         .admin-section h2 {
-            color: #2c3e50;
+            color: var(--color-primary);
             margin-top: 0;
-            padding-bottom: 5px;
-            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #F3F4F6;
+            font-size: 22px;
+            font-weight: 700;
         }
+        .admin-section h2 i {
+            margin-right: 8px;
+        }
+        
+        /* ----------------- FORM ELEMENTS ----------------- */
         .admin-form label {
             display: block;
-            margin-top: 15px;
-            margin-bottom: 5px;
+            margin-top: 18px;
+            margin-bottom: 6px;
             font-weight: 600;
-            color: #555;
-            font-size: 14px;
+            color: var(--color-text-dark);
+            font-size: 15px;
         }
-        .admin-form input, .admin-form select, .admin-form textarea {
+        .admin-form input:not([type="checkbox"]):not([type="file"]):not([type="color"]), 
+        .admin-form select, 
+        .admin-form textarea {
             width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            box-sizing: border-box; /* ADDED for robustness */
-            font-size: 14px;
+            padding: 12px;
+            border: 1px solid #D1D5DB;
+            border-radius: 8px;
+            box-sizing: border-box; 
+            font-size: 15px;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        
+        /* Specific styling for the color input */
+        .admin-form input[type="color"] {
+            width: 100%;
+            height: 44px; /* Same height as other inputs */
+            padding: 4px; /* Adjust padding for visual alignment */
+            border: 1px solid #D1D5DB;
+            border-radius: 8px;
+            box-sizing: border-box;
+            cursor: pointer;
+        }
+        
+        .admin-form input:focus, 
+        .admin-form select:focus, 
+        .admin-form textarea:focus {
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(67, 56, 202, 0.1); 
+            outline: none;
         }
         .admin-form textarea {
-            min-height: 80px;
+            min-height: 100px;
+            resize: vertical;
         }
+        
+        /* Submit Buttons */
         .admin-form button.submit-btn {
-            width: 100%; /* Full width for mobile */
-            background-color: #3ecf8e;
+            width: 100%; 
+            background-color: var(--color-primary); /* Default is Indigo */
             color: white;
-            padding: 12px;
+            padding: 14px;
             border: none;
             border-radius: 8px;
             cursor: pointer;
-            font-size: 16px;
-            margin-top: 20px;
+            font-size: 17px;
+            font-weight: 600;
+            margin-top: 25px;
             transition: background-color 0.3s;
-            box-sizing: border-box; /* ADDED for robustness */
         }
-        .admin-form button.submit-btn:hover {
-            background-color: #34b57a;
+        /* Specific Button Overrides */
+        #memberFormSubmit {
+            background-color: var(--color-secondary) !important; /* Emerald for Add/Save Member */
         }
-
-        /* Grid for forms on larger screens, single column on mobile */
+        #memberFormSubmit:hover {
+            background-color: #059669 !important; /* Darker Emerald */
+        }
+        .admin-form button.submit-btn[onclick*="setupMemberForm"] {
+            background-color: #9CA3AF !important; /* Grey for Reset */
+        }
+        .admin-form button.submit-btn[onclick*="setupMemberForm"]:hover {
+            background-color: #6B7280 !important;
+        }
+        .admin-section:nth-of-type(4) .submit-btn { /* Admin Passcode change */
+            background-color: var(--color-primary) !important;
+        }
+        .admin-section:nth-of-type(5) .submit-btn { /* Female Passcode save */
+            background-color: var(--color-warning) !important;
+        }
+        .admin-section:nth-of-type(5) .submit-btn:hover { 
+            background-color: #D97706 !important; /* Darker Amber */
+        }
+        
+        /* Grid Layout */
         .form-grid {
             display: grid;
             grid-template-columns: 1fr; 
             gap: 20px;
         }
-        
         @media (min-width: 900px) {
             .form-grid.three-col {
                 grid-template-columns: repeat(3, 1fr);
@@ -749,14 +978,23 @@
             display: flex;
             align-items: center;
             margin-top: 20px;
+            padding: 10px 0;
+            border-bottom: 1px solid #F3F4F6;
+        }
+        .checkbox-group input[type="checkbox"] {
+            transform: scale(1.3);
+            accent-color: var(--color-secondary);
         }
         .checkbox-group label {
             margin: 0;
             margin-left: 10px;
-            font-weight: 400;
+            font-weight: 500;
+            /* Override the default block label style for this specific group */
+            display: inline; 
+            margin-top: 0; 
         }
 
-        /* ----------------- MEMBER TABLE (MOBILE FRIENDLY) ----------------- */
+        /* ----------------- MEMBER TABLE (DESKTOP) ----------------- */
         .table-responsive {
             overflow-x: auto; 
             width: 100%;
@@ -764,44 +1002,129 @@
 
         .member-table {
             width: 100%;
-            border-collapse: collapse;
-            min-width: 800px; /* Forces scroll on mobile */
-            font-size: 13px;
+            border-collapse: separate;
+            border-spacing: 0;
+            min-width: 800px; /* Desktop min-width */
+            font-size: 14px;
             text-align: left;
+            border-radius: 10px;
+            overflow: hidden; 
         }
         .member-table th {
-            background-color: #ecf0f1;
-            padding: 10px;
-            border-bottom: 2px solid #ddd;
+            background-color: #E0E7FF; 
+            color: var(--color-primary);
+            padding: 12px 10px;
             font-weight: 700;
-            color: #34495e;
             white-space: nowrap;
         }
         .member-table td {
-            padding: 8px;
-            border-bottom: 1px solid #f0f0f0;
+            padding: 10px;
+            border-bottom: 1px solid #F3F4F6;
             vertical-align: middle;
-            color: #333;
+            color: var(--color-text-dark);
             white-space: nowrap;
         }
+        .member-table tr.even-row {
+            background-color: #ffffff;
+        }
+        .member-table tr.odd-row {
+            background-color: #F9FAFB;
+        }
+        .member-table tr:hover {
+            background-color: #EFF6FF; 
+        }
+
         .admin-actions button {
-            padding: 4px 8px;
+            padding: 6px 12px;
             border: none;
-            border-radius: 4px;
-            font-size: 11px;
+            border-radius: 6px;
+            font-size: 12px;
             cursor: pointer;
             margin-right: 5px;
+            font-weight: 600;
             transition: opacity 0.3s;
         }
-        .admin-actions .edit-btn { background-color: #3498db; color: white; }
-        .admin-actions .delete-btn { background-color: #e74c3c; color: white; }
+        .admin-actions .edit-btn { background-color: var(--color-primary); color: white; }
+        .admin-actions .delete-btn { background-color: var(--color-danger); color: white; }
         
-        /* New Passcode Section Specific Styles */
+        /* Read Only Input */
         .read-only-input {
-            background-color: #f0f0f0;
+            background-color: #E5E7EB; 
             font-weight: 700;
-            color: #34495e;
+            color: var(--color-text-light);
             cursor: default;
+        }
+
+        /* ----------------- MOBILE TABLE (CARD VIEW) ----------------- */
+        @media screen and (max-width: 800px) {
+            /* Hide the table header */
+            .member-table thead {
+                display: none;
+            }
+            
+            /* Remove desktop table styling */
+            .member-table {
+                min-width: 100%; 
+                border-collapse: collapse;
+            }
+
+            /* Convert each row into a block-level card */
+            .member-table tr {
+                display: block;
+                margin-bottom: 15px; 
+                border: 1px solid #ddd;
+                border-radius: 8px;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+                padding: 0; 
+            }
+            
+            /* Remove striped background on mobile cards */
+            .member-table tr.even-row, .member-table tr.odd-row {
+                background-color: white !important;
+            }
+            
+            /* Convert each cell into a block-level element for stacking */
+            .member-table td {
+                display: block;
+                border-bottom: 1px solid #F3F4F6;
+                text-align: right;
+                padding: 12px 15px;
+                font-size: 15px;
+                white-space: normal; /* Allow text wrapping */
+            }
+
+            /* Add the table header as a label using the data-label attribute */
+            .member-table td:before {
+                content: attr(data-label) ":";
+                float: left;
+                font-weight: 700;
+                text-transform: capitalize; 
+                color: var(--color-primary);
+                font-size: 1em;
+                margin-right: 10px;
+            }
+            
+            /* Remove bottom border on the last cell (actions) */
+            .member-table td:last-child {
+                border-bottom: 0;
+            }
+            
+            /* Center actions buttons in the card */
+            .admin-actions {
+                text-align: center;
+                padding: 15px !important;
+                display: flex;
+                justify-content: space-around;
+                gap: 10px;
+                align-items: center;
+            }
+            
+            .admin-actions button {
+                flex-grow: 1; /* Make buttons grow to fill space */
+                margin: 0;
+                font-size: 13px;
+                padding: 8px 10px;
+            }
         }
     </style>
 </head>
@@ -813,7 +1136,7 @@
         <input type="password" id="passcode" placeholder="Enter Passcode" onkeyup="if(event.key==='Enter') loginAdmin()" />
         <button onclick="loginAdmin()">Login</button>
         <div style="margin-top: 15px;">
-             <a href="index.html" style="color:#2980b9; text-decoration:none; font-size:14px;"><i class="fa-solid fa-arrow-left"></i> Go Back to Public Site</a>
+             <a href="index.html" style="color:var(--color-primary); text-decoration:none; font-size:14px; font-weight: 500;"><i class="fa-solid fa-arrow-left"></i> Go Back to Public Site</a>
         </div>
     </div>
 </div>
@@ -864,17 +1187,18 @@
                         <label for="dob">Date of Birth</label>
                         <input type="date" id="dob">
                     </div>
+                    
                     <div>
                         <label for="imageUpload">Member ki Image Upload krain</label>
                         <input type="file" id="imageUpload" accept="image/*">
                     </div>
                     
                     <div style="grid-column: 1 / -1;">
-                        <div id="imagePreviewContainer" style="margin-top: 15px; display: none; align-items: center; gap: 15px;">
-                            <img id="currentImagePreview" src="" alt="Current Image" style="max-width: 100px; max-height: 100px; border-radius: 8px;">
+                        <div id="imagePreviewContainer" style="margin-top: 15px; display: none; align-items: center; gap: 15px; padding: 10px; border: 1px dashed #D1D5DB; border-radius: 8px;">
+                            <img id="currentImagePreview" src="" alt="Current Image" style="max-width: 80px; max-height: 80px; border-radius: 6px; object-fit: cover;">
                             <div>
-                                <span id="imageStatus" style="font-size: 12px; color: #555; display: block; margin-bottom: 5px;">Current Image: </span>
-                                <button type="button" onclick="removeImage()" id="removeImageBtn" style="background-color: #e74c3c; color: white; padding: 5px 10px; border: none; border-radius: 4px; font-size: 12px; cursor: pointer;">Remove Current Image</button>
+                                <span id="imageStatus" style="font-size: 13px; color: var(--color-text-light); display: block; margin-bottom: 5px;">Current Image: </span>
+                                <button type="button" onclick="removeImage()" id="removeImageBtn" style="background-color: var(--color-danger); color: white; padding: 6px 12px; border: none; border-radius: 4px; font-size: 12px; cursor: pointer; transition: background-color 0.3s;">Remove Current Image</button>
                             </div>
                         </div>
                         <input type="hidden" id="existingImageURL" value=""> 
@@ -883,13 +1207,15 @@
                 
                 <div class="form-grid two-col" style="margin-top: 10px;">
                     <div>
-                        <label for="parentID">Member K Walid kn hain</label>
+                        <label for="parentID">Member K Walid kn hain (Search and Select)</label>
+                        <input type="text" id="parentSearch" placeholder="Type member name in English/Urdu to filter list..." onkeyup="filterSelectOptions('parentID', this.value)">
                         <select id="parentID">
                             <option value="">(Optional) No Parent / Root Member</option>
                         </select>
                     </div>
                     <div>
-                        <label for="spouseID"> Member ki wife (if in system)</label>
+                        <label for="spouseID"> Member ki wife (if in system) (Search and Select)</label>
+                        <input type="text" id="spouseSearch" placeholder="Type spouse name in English/Urdu to filter list..." onkeyup="filterSelectOptions('spouseID', this.value)">
                         <select id="spouseID">
                             <option value="">(Optional) No Spouse / External Spouse</option>
                         </select>
@@ -905,13 +1231,16 @@
                     <label for="isAlive">Zainda ha?</label>
                 </div>
                 
-                <button type="submit" id="memberFormSubmit" class="submit-btn">Add Member</button>
-                <button type="button" onclick="setupMemberForm()" class="submit-btn" style="background-color: #f39c12; margin-top: 10px;">Reset Form</button>
+                <button type="submit" id="memberFormSubmit" class="submit-btn"><i class="fa-solid fa-save"></i> Add Member</button>
+                <button type="button" onclick="setupMemberForm()" class="submit-btn" style="margin-top: 10px;"><i class="fa-solid fa-undo"></i> Reset Form</button>
             </form>
         </div>
 
         <div class="admin-section" id="memberListSection">
-            <h2><i class="fa-solid fa-list"></i> Member List (Scroll Horizontally on Mobile)</h2>
+            <h2><i class="fa-solid fa-list"></i> Member List</h2>
+            
+            <label for="memberSearchInput" style="margin-bottom: 5px; font-weight: 600; color: var(--color-text-dark); font-size: 15px;">Search Member by Name (English or Urdu Roman):</label>
+            <input type="text" id="memberSearchInput" placeholder="Type name here to filter the list (e.g., 'ali' or 'احمد')" onkeyup="filterMemberList(this.value)" style="width: 100%; padding: 12px; border: 1px solid #D1D5DB; border-radius: 8px; margin-bottom: 20px; box-sizing: border-box;">
             <div class="table-responsive">
                 <table class="member-table">
                     <thead>
@@ -936,14 +1265,43 @@
         <div class="admin-section" id="siteSettingsSection">
             <h2><i class="fa-solid fa-gear"></i> Site Settings</h2>
             <form onsubmit="event.preventDefault(); saveSiteConfig()" class="admin-form">
-                <div class="form-grid two-col">
-                    <div style="grid-column: 1 / -1;">
+                
+                <div class="form-grid three-col">
+                    <div>
                         <label for="siteName">Site Title (Main)</label>
                         <input type="text" id="siteName">
                     </div>
+                    <div style="grid-column: 2 / -1;">
+                         <label for="siteColor">Main Site Color (Primary)</label>
+                         <input type="color" id="siteColor" value="#4338CA" title="Select the main color theme for the site.">
+                    </div>
+                </div>
+
+                <div class="form-grid two-col">
                     <div style="grid-column: 1 / -1;">
                         <label for="features">App Features (Comma Separated)</label>
                         <input type="text" id="features">
+                    </div>
+                    
+                    <div>
+                        <label for="phoneNumber">Contact Number</label>
+                        <input type="text" id="phoneNumber" placeholder="+923XXYYYYYYY">
+                    </div>
+                    <div>
+                        <label for="whatsappNumber">WhatsApp Number</label>
+                        <input type="text" id="whatsappNumber" placeholder="+923XXYYYYYYY">
+                    </div>
+                </div>
+
+                <div class="checkbox-group">
+                    <input type="checkbox" id="hideDOB">
+                    <label for="hideDOB">Zinda (Alive) Members ki Date of Birth (DOB) Chhupain?</label>
+                </div>
+
+                <div class="form-grid two-col">
+                    <div style="grid-column: 1 / -1;">
+                        <label for="welcomeMessage">Public Welcome/Announcement Message (Optional)</label>
+                        <textarea id="welcomeMessage" rows="2" placeholder="Example: Jalsa 2024 ki tafseelat jald announce ki jayengi."></textarea>
                     </div>
                     <div style="grid-column: 1 / -1;">
                         <label for="contactDesc">Contact Description</label>
@@ -954,7 +1312,7 @@
                         <textarea id="aboutUrdu"></textarea>
                     </div>
                 </div>
-                <button type="submit" class="submit-btn">Save Site Settings</button>
+                <button type="submit" class="submit-btn"><i class="fa-solid fa-floppy-disk"></i> Save Site Settings</button>
             </form>
         </div>
         
@@ -975,21 +1333,21 @@
                         <input type="password" id="confirmPasscode" required>
                     </div>
                 </div>
-                <button type="submit" class="submit-btn">Change Passcode</button>
+                <button type="submit" class="submit-btn"><i class="fa-solid fa-key"></i> Change Passcode</button>
             </form>
         </div>
 
         <div class="admin-section" id="femalePasscodeSection">
             <h2><i class="fa-solid fa-user-shield"></i> Female Detail Passcode Management</h2>
             <form onsubmit="event.preventDefault(); saveFemalePasscode()" class="admin-form">
-                <p style="color: #555; font-size: 14px; margin-top: -10px;">
+                <p style="color: var(--color-text-light); font-size: 14px; margin-top: -10px;">
                     یہ پاس کوڈ خواتین کی تفصیلات دیکھنے کے لیے استعمال ہو گا جو عوامی سائٹ پر درج کیا جاتا ہے۔
                 </p>
                 
                  <div class="form-grid three-col">
                     <div>
                         <label for="currentFemalePasscodeDisplay">Current Passcode</label>
-                        <input type="text" id="currentFemalePasscodeDisplay" class="read-only-input" readonly value="(Loading...)" title="Current Passcode is loaded from Supabase.">
+                        <input type="text" id="currentFemalePasscodeDisplay" class="read-only-input" readonly value="(No Passcode Set)" title="Current Passcode is loaded from Supabase.">
                     </div>
                     <div>
                         <label for="newFemalePasscode">New Passcode</label>
@@ -1000,7 +1358,7 @@
                         <input type="password" id="confirmFemalePasscode" placeholder="Confirm New Passcode (Leave empty to remove)">
                     </div>
                 </div>
-                <button type="submit" class="submit-btn" style="background-color: #e67e22;">
+                <button type="submit" class="submit-btn">
                     <i class="fa-solid fa-floppy-disk"></i> Save / Remove Female Passcode
                 </button>
             </form>

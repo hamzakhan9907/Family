@@ -326,13 +326,12 @@
                 relation: document.getElementById('relation').value.trim() || null, 
                 gender: document.getElementById('gender').value || null,
                 dob: document.getElementById('dob').value || null,
-                phone: document.getElementById('phone').value.trim() || null,
+                // REMOVED: phone: document.getElementById('phone').value.trim() || null, 
                 image_url: imageURLToSave, // FINAL Image URL
                 is_alive: document.getElementById('isAlive').checked,
                 parent_id: document.getElementById('parentID').value || null,
                 spouse_id: document.getElementById('spouseID').value || null,
                 spouse_external_name: document.getElementById('spouseExternalName').value.trim() || null,
-                member_password: document.getElementById('memberPassword').value.trim() || null,
             };
 
 
@@ -373,7 +372,7 @@
             document.getElementById('relation').value = member.relation || ''; 
             document.getElementById('gender').value = member.gender || '';
             document.getElementById('dob').value = member.dob || '';
-            document.getElementById('phone').value = member.phone || '';
+            // REMOVED: document.getElementById('phone').value = member.phone || '';
             document.getElementById('isAlive').checked = member.is_alive === true;
             document.getElementById('spouseExternalName').value = member.spouse_external_name || '';
 
@@ -389,9 +388,6 @@
 
             // Populate Parent/Spouse selects with current values selected
             populateParentSelects(member.parent_id, member.spouse_id);
-
-            // Clear member password field on edit for security
-            document.getElementById('memberPassword').value = '';
             
             // Show the form section
             showSection('memberManagementSection');
@@ -414,10 +410,10 @@
             }
         }
         
-        // --- SITE SETTINGS MANAGEMENT (Updated to fetch female_pass) ---
+        // --- SITE SETTINGS MANAGEMENT (Updated: Phone/Whatsapp removed) ---
         async function loadSiteConfig() {
-            // FIX: Selecting only correct column names
-            const { data, error } = await _supabase.from('site_config').select('site_name, about_urdu, contact_desc, phone, whatsapp, features, female_pass').limit(1);
+            // UPDATED: Selecting only site_name, about_urdu, contact_desc, features, female_pass
+            const { data, error } = await _supabase.from('site_config').select('site_name, about_urdu, contact_desc, features, female_pass').limit(1);
             if (error) {
                 console.error("Error loading site config:", error);
                 return;
@@ -427,8 +423,6 @@
                 document.getElementById('siteName').value = config.site_name || '';
                 document.getElementById('aboutUrdu').value = config.about_urdu || '';
                 document.getElementById('contactDesc').value = config.contact_desc || '';
-                document.getElementById('phoneNum').value = config.phone || '';
-                document.getElementById('whatsappNum').value = config.whatsapp || '';
                 document.getElementById('features').value = config.features || '';
                 
                 // Load female passcode and store it locally
@@ -453,8 +447,6 @@
                 site_name: document.getElementById('siteName').value.trim() || null,
                 about_urdu: document.getElementById('aboutUrdu').value.trim() || null,
                 contact_desc: document.getElementById('contactDesc').value.trim() || null,
-                phone: document.getElementById('phoneNum').value.trim() || null,
-                whatsapp: document.getElementById('whatsappNum').value.trim() || null,
                 features: document.getElementById('features').value.trim() || null,
             };
 
@@ -713,7 +705,7 @@
             padding: 10px;
             border: 1px solid #ccc;
             border-radius: 6px;
-            box-sizing: border-box;
+            box-sizing: border-box; /* ADDED for robustness */
             font-size: 14px;
         }
         .admin-form textarea {
@@ -730,6 +722,7 @@
             font-size: 16px;
             margin-top: 20px;
             transition: background-color 0.3s;
+            box-sizing: border-box; /* ADDED for robustness */
         }
         .admin-form button.submit-btn:hover {
             background-color: #34b57a;
@@ -741,21 +734,13 @@
             grid-template-columns: 1fr; 
             gap: 20px;
         }
-        @media (min-width: 600px) {
-            .form-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
+        
         @media (min-width: 900px) {
             .form-grid.three-col {
                 grid-template-columns: repeat(3, 1fr);
             }
             .form-grid.two-col {
                 grid-template-columns: repeat(2, 1fr);
-            }
-            /* Adjustments for the member form to look good */
-            #memberManagementSection .form-grid.three-col > div:nth-child(7) {
-                grid-column: 1 / -1; /* Member Passcode takes full width */
             }
         }
         
@@ -880,11 +865,6 @@
                         <input type="date" id="dob">
                     </div>
                     <div>
-                        <label for="phone">Phone/Contact</label>
-                        <input type="text" id="phone">
-                    </div>
-                    
-                    <div>
                         <label for="imageUpload">Member ki Image Upload krain</label>
                         <input type="file" id="imageUpload" accept="image/*">
                     </div>
@@ -897,10 +877,7 @@
                                 <button type="button" onclick="removeImage()" id="removeImageBtn" style="background-color: #e74c3c; color: white; padding: 5px 10px; border: none; border-radius: 4px; font-size: 12px; cursor: pointer;">Remove Current Image</button>
                             </div>
                         </div>
-                        <input type="hidden" id="existingImageURL" value=""> </div>
-                    <div style="grid-column: 1 / -1;">
-                        <label for="memberPassword">Member Passcode (Optional)</label>
-                        <input type="password" id="memberPassword" placeholder="Keep empty to remove/set no passcode">
+                        <input type="hidden" id="existingImageURL" value=""> 
                     </div>
                 </div>
                 
@@ -963,14 +940,6 @@
                     <div style="grid-column: 1 / -1;">
                         <label for="siteName">Site Title (Main)</label>
                         <input type="text" id="siteName">
-                    </div>
-                    <div>
-                        <label for="phoneNum">Contact Phone</label>
-                        <input type="text" id="phoneNum">
-                    </div>
-                    <div>
-                        <label for="whatsappNum">WhatsApp Number</label>
-                        <input type="text" id="whatsappNum">
                     </div>
                     <div style="grid-column: 1 / -1;">
                         <label for="features">App Features (Comma Separated)</label>

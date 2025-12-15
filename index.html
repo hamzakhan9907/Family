@@ -1364,21 +1364,47 @@ function closeAbout(){
 function closeDetail() {
     document.getElementById("detailModal").style.display = "none";
 }
+// Global variable to store member data pending password verification (must be global: let tempMemberData = null;)
 
+
+// 1. Passcode Modal ko kholne ka function
 function openPasscodeModal(data) {
-    tempMemberData = { id: data.id, full_name: data.full_name, gender: data.gender }; // Store minimal data
-    document.getElementById("passcodeModal").style.display="flex";
+    tempMemberData = { id: data.id, full_name: data.full_name, gender: data.gender };
+    
+    // Yahan display: flex !important istemal kiya gaya hai takay CSS ki koi bhi
+    // doosri setting isko band na rakh sake.
+    document.getElementById("passcodeModal").setAttribute('style', 'display: flex !important;'); 
+    
+    // Input field ko saaf karein aur focus dein
     document.getElementById('femalePasscodeInput').value = '';
     document.getElementById('passcodeError').innerText = '';
     document.getElementById('femalePasscodeInput').focus();
 }
 
+// 2. Passcode Modal ko band karne ka function
 function closePasscodeModal() {
-    document.getElementById("passcodeModal").style.display="none";
-    tempMemberData = null; 
+    // !important ka istemal takay ye modal foran band ho jaye
+    document.getElementById("passcodeModal").setAttribute('style', 'display: none !important;');
 }
 
-// Function to handle passcode submission (unchanged)
+// 3. Member detail ko load karne aur passcode check karne ka function
+function checkAndLoadDetail(data) {
+    const isFemale = data.gender && data.gender.toLowerCase() === 'f';
+    // Passcode sirf tab zaroori hai jab female ho AUR femalePasscode variable mein value ho
+    const isProtected = isFemale && femalePasscode; 
+
+    if (isProtected) {
+        // Agar protected hai, to passcode modal kholo
+        openPasscodeModal(data);
+    } else {
+        // Agar protected nahi, to seedha detail modal kholo
+        // Detail modal ko bhi display: flex !important se kholna behtar hai
+        document.getElementById("detailModal").setAttribute('style', 'display: flex !important;');
+        renderAndShowDetailModal(data);
+    }
+}
+
+// 4. Passcode verify karne ka function
 async function verifyFemalePasscode() {
     const inputField = document.getElementById('femalePasscodeInput');
     const errorDisplay = document.getElementById('passcodeError');
@@ -1391,42 +1417,29 @@ async function verifyFemalePasscode() {
 
     if (inputPasscode === femalePasscode) {
         errorDisplay.innerText = '';
-        closePasscodeModal(); 
+        closePasscodeModal(); // Passcode modal band
 
         if (tempMemberData) {
+            // Full details database se fetch karein
             const { data: fullData, error } = await _supabase.from('family_data').select('*').eq('id', tempMemberData.id).single();
             if (error) {
                 console.error("Error fetching full details:", error);
-                document.getElementById("detailModal").style.display = "none";
+                // Error hone par detail modal band rakhen
+                document.getElementById("detailModal").setAttribute('style', 'display: none !important;'); 
                 alert("تفصیلات لوڈ نہیں ہو سکی۔");
                 return;
             }
             
-            // *** یہاں پر طاقتور (Powerful) طریقہ استعمال کریں ***
-            // detailModal ko force karke flex par set kiya gaya hai.
+            // *** Yahan woh fix hai jo detail modal ko kholta hai ***
+            // display: flex !important ka istemal takay ye zaroor khul jaye
             document.getElementById("detailModal").setAttribute('style', 'display: flex !important;');
-            // ******************************************************
             
+            // Ab data bharen aur show karein
             renderAndShowDetailModal(fullData);
         }
     } else {
         errorDisplay.innerText = 'Ghalat Passcode. Dubara koshish karein.';
         inputField.value = '';
-    }
-}
-
-// Helper function to check for passcode requirement and load data (unchanged)
-function checkAndLoadDetail(data) {
-    const isFemale = data.gender && data.gender.toLowerCase() === 'f';
-    const isProtected = isFemale && femalePasscode;
-
-    if (isProtected) {
-        // If protected, open the passcode modal
-        openPasscodeModal(data);
-    } else {
-        // If not protected, proceed to load details
-        document.getElementById("detailModal").style.display = "flex";
-        renderAndShowDetailModal(data);
     }
 }
 

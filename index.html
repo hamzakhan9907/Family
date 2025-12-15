@@ -1167,14 +1167,33 @@ function romanizeForSearch(urduText) {
 }
 
 
-// Function to mask female name (unchanged)
-function maskFemaleName(name, gender) {
-    if (gender && gender.toLowerCase() === 'f' && femalePasscode) {
-        return name.split(' ')[0] + ' (محفوظ)';
+// Function to mask female name (Updated to show 'Po***' style)
+function maskFemaleName(fullName, gender) {
+    // Check karein ke member female hai AND passcode set hai
+    if (gender && fullName && gender.toLowerCase() === 'f' && femalePasscode) {
+        
+        // Agar naam ka pehla lafz 4 ya us se zyada letters ka hai to mask karein
+        if (fullName.length > 3) {
+            // Naam ke pehle do haroof (characters) lein
+            const firstTwo = fullName.substring(0, 2); 
+            
+            // Baki bache hue haroof ki ta'adad maloom karein
+            const remainingLength = fullName.length - 2;
+            
+            // Baki haroof ko stars (*) se badal dein
+            const stars = '*'.repeat(remainingLength);
+            
+            // Wapas karein: Pehle do haroof + stars
+            return firstTwo + stars;
+        } else {
+            // Agar naam 3 ya us se chota hai to sirf 1st haroof aur stars
+            return fullName.substring(0, 1) + '***';
+        }
     }
-    return name;
+    
+    // Agar member male hai ya passcode set nahi, to pura naam wapas kar dein
+    return fullName;
 }
-
 // Function to toggle tree children (unchanged)
 function toggleChildren(btn, event) {
     event.stopPropagation(); // Prevent card click event
@@ -1342,6 +1361,10 @@ function closeAbout(){
     document.getElementById("aboutModal").style.display="none";
 }
 
+function closeDetail() {
+    document.getElementById("detailModal").style.display = "none";
+}
+
 function openPasscodeModal(data) {
     tempMemberData = { id: data.id, full_name: data.full_name, gender: data.gender }; // Store minimal data
     document.getElementById("passcodeModal").style.display="flex";
@@ -1370,9 +1393,7 @@ async function verifyFemalePasscode() {
         errorDisplay.innerText = '';
         closePasscodeModal(); 
 
-        // The checkAndLoadDetail function will be called with the temporary data, bypassing the security check
         if (tempMemberData) {
-            // Since tempMemberData only has ID, Name, Gender, fetch full details now
             const { data: fullData, error } = await _supabase.from('family_data').select('*').eq('id', tempMemberData.id).single();
             if (error) {
                 console.error("Error fetching full details:", error);
@@ -1380,6 +1401,12 @@ async function verifyFemalePasscode() {
                 alert("تفصیلات لوڈ نہیں ہو سکی۔");
                 return;
             }
+            
+            // *** یہاں پر طاقتور (Powerful) طریقہ استعمال کریں ***
+            // detailModal ko force karke flex par set kiya gaya hai.
+            document.getElementById("detailModal").setAttribute('style', 'display: flex !important;');
+            // ******************************************************
+            
             renderAndShowDetailModal(fullData);
         }
     } else {

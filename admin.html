@@ -613,7 +613,7 @@
         // --- SITE SETTINGS MANAGEMENT (Updated to include new fields) ---
         async function loadSiteConfig() {
             // UPDATED: Selecting all config fields including new ones
-            const { data, error } = await _supabase.from('site_config').select('site_name, about_urdu, contact_desc, features, female_pass, phone, whatsapp, site_color, hide_dob_for_living, welcome_message').limit(1);
+            const { data, error } = await _supabase.from('site_config').select('site_name, about_urdu, contact_desc, features, female_pass, phone, whatsapp').limit(1);
             if (error) {
                 console.error("Error loading site config:", error);
                 return;

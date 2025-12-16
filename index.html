@@ -1102,20 +1102,22 @@ input:checked + .slider:before {
     <div class="shajra-modal-content">
         <span class="shajra-modal-close-x" onclick="closeAnalytics()">&times;</span>
         <div class="shajra-modal-title"><i class="fa-solid fa-chart-pie"></i> فیملی کے اعداد و شمار</div>
+		<div id="statRootNameDisplay" style="font-size: 14px; font-weight: 600; color: #444; margin-bottom: 15px;"></div>
+        <div class="analytics-stats-grid" id="statsGrid">
+		
         <div class="analytics-stats-grid">
             <div class="analytics-stat-card"><span class="stat-number" id="statTotal">--</span><span class="stat-urdu">کل ممبران</span></div>
-            <div class="analytics-stat-card"><span class="stat-number" id="statMale">-- / --</span><span class="stat-urdu">مرد / عورت</span></div>
+            <div class="analytics-stat-card"><span class="stat-number" id="statGenerations">--</span><span class="stat-urdu">کُل نسلیں (Generations)</span></div> <div class="analytics-stat-card"><span class="stat-number" id="statMale">-- / --</span><span class="stat-urdu">مرد / عورت</span></div>
             <div class="analytics-stat-card"><span class="stat-number" id="statAlive">-- / --</span><span class="stat-urdu">زندہ / انتقال</span></div>
         </div>
         <div class="analytics-fun-box">
             <div style="font-weight:bold; font-size:13px; margin-bottom:8px; color:#1565c0;">Dilchasp Malumat:</div>
             <div class="fun-item"><span>Oldest Member (DOB)</span><span id="statOldest">N/A</span></div>
-            <div class="fun-item"><span>Youngest Member (DOB)</span><span id="statYoungest">N/A</span></div>
-        </div>
+            <div class="fun-item"><span>Youngest Member (Alive)</span><span id="statYoungest">N/A</span></div>
+            <div class="fun-item"><span>Average Age (Alive)</span><span id="statAvgAge">N/A</span></div> <div class="fun-item"><span>Most Children</span><span id="statMostChildren">N/A</span></div> </div>
         <button onclick="closeAnalytics()" class="shajra-modal-action-btn">Close</button>
     </div>
 </div>
-
 <div id="eventsModal" class="shajra-modal-overlay" onclick="if (event.target === this) closeEvents()">
     <div class="shajra-modal-content">
         <span class="shajra-modal-close-x" onclick="closeEvents()">&times;</span>
@@ -1229,7 +1231,7 @@ function romanizeForSearch(urduText) {
 }
 
 
-// Function to mask female name (Updated to show 'Po***' style)
+// Function to mask female name
 function maskFemaleName(fullName, gender) {
     // Check karein ke member female hai AND passcode set hai
     if (gender && fullName && gender.toLowerCase() === 'f' && femalePasscode) {
@@ -1326,7 +1328,7 @@ function expandPath(pathIds) {
     }, 50);
 }
 
-// NEW: Helper function to get the current root member and all their descendants. (unchanged)
+// Helper function to get the current root member and all their descendants.
 function getDescendantsAndSelf(rootId) {
     if (!rootId || allMembersData.length === 0) return [];
     const rootMember = allMembersData.find(m => m.id == rootId);
@@ -1374,7 +1376,7 @@ function calculateAge(dob, isAlive, dod) {
     return `${statusText} ${age} years)`;
 }
 
-// Helper for All Members List sorting (unchanged)
+// Helper for All Members List sorting and Stats calculation
 function getAgeForList(dob, isAlive, dod) {
     if (!dob) return -1; // Sorts N/A members last
     const dobDate = new Date(dob);
@@ -1426,8 +1428,6 @@ function closeAbout(){
 function closeDetail() {
     document.getElementById("detailModal").style.display = "none";
 }
-// Global variable to store member data pending password verification (must be global: let tempMemberData = null;)
-
 
 // 1. Passcode Modal ko kholne ka function
 function openPasscodeModal(data) {
@@ -2135,21 +2135,171 @@ async function loadRootMembers() {
     }
 }
 
+// NEW FUNCTION: Calculate Max Generations
+function findMaxGenerations(data, rootId) {
+    if (data.length === 0) return 0;
+
+    const childrenMap = new Map();
+    data.forEach(member => {
+        if (member.parent_id) {
+            if (!childrenMap.has(member.parent_id)) {
+                childrenMap.set(member.parent_id, []);
+            }
+            childrenMap.get(member.parent_id).push(member.id);
+        }
+    });
+
+    let maxDepth = 0;
+    
+    // BFS queue: [memberId, depth]
+    // Start depth at 1 (Root is generation 1)
+    const queue = [[rootId, 1]]; 
+    const visited = new Set([rootId]);
+
+    while (queue.length > 0) {
+        const [currentId, currentDepth] = queue.shift();
+        maxDepth = Math.max(maxDepth, currentDepth);
+
+        const childrenIds = childrenMap.get(currentId) || [];
+        childrenIds.forEach(childId => {
+            // Ensure we don't go into a loop or re-process
+            if (data.some(m => m.id === childId) && !visited.has(childId)) { 
+                visited.add(childId);
+                queue.push([childId, currentDepth + 1]);
+            }
+        });
+    }
+
+    return maxDepth;
+}
+
+// MODIFIED FUNCTION: Stats calculation
+function calculateAndRenderStats(data, rootMember ) {
+    // 1. Basic Counts
+    let total = data.length;
+    let m = 0; // Male count
+    let f = 0; // Female count
+    let a = 0; // Alive count
+    let d = 0; // Deceased count
+    let totalAliveAge = 0; // For average age
+    let aliveCountForAvg = 0; // Count of alive members with DOB
+    let oldestDob = '2100-01-01'; // Future date (to find the earliest DOB)
+    let oldestMember = null;
+    let youngestDob = '1900-01-01'; // Past date (to find the latest DOB)
+    let youngestMember = null;
+    
+    // 2. Most Children
+    const childrenCount = new Map(); // Key: ParentId, Value: Count
+
+    data.forEach(x => {
+        // Gender counting
+        if (x.gender) {
+            if (x.gender.toLowerCase().startsWith('m')) m++;
+            else f++;
+        }
+
+        // Alive/Deceased counting
+        if (x.is_alive !== undefined) {
+            if (x.is_alive) a++;
+            else d++;
+        }
+
+        // Age calculation
+        if (x.dob) {
+            const age = getAgeForList(x.dob, x.is_alive, x.dod); 
+            
+            // Oldest/Youngest calculation (using DOB string comparison is OK for this purpose)
+            if (x.dob < oldestDob) {
+                oldestDob = x.dob;
+                oldestMember = x;
+            }
+            if (x.dob > youngestDob && x.is_alive) { // Only youngest ALIVE
+                youngestDob = x.dob;
+                youngestMember = x;
+            }
+            
+            // Average Age calculation (only for ALIVE members with valid age)
+            if (x.is_alive && age >= 0) {
+                 totalAliveAge += age;
+                 aliveCountForAvg++;
+            }
+        }
+        
+        // Children Count
+        if (x.parent_id) {
+            childrenCount.set(x.parent_id, (childrenCount.get(x.parent_id) || 0) + 1);
+        }
+    });
+    
+    // 3. Generations
+    const generations = findMaxGenerations(data, currentRootId);
+    
+    // 4. Final Calculations for Most Children and Average Age
+    let avgAge = aliveCountForAvg > 0 ? (totalAliveAge / aliveCountForAvg).toFixed(1) : 'N/A';
+    
+    let mostChildrenParentId = null;
+    let maxChildren = 0;
+    childrenCount.forEach((count, parentId) => {
+        if (count > maxChildren) {
+            maxChildren = count;
+            mostChildrenParentId = parentId;
+        }
+    });
+
+    let mostChildrenName = 'N/A';
+    if (mostChildrenParentId) {
+        const parent = data.find(m => m.id == mostChildrenParentId);
+        if (parent) {
+            mostChildrenName = maskFemaleName(parent.full_name, parent.gender) + ` (${maxChildren} Children)`;
+        }
+    }
+    
+    // 5. Render to HTML
+    document.getElementById('statTotal').innerText = total;
+    document.getElementById('statGenerations').innerText = generations; // NEW
+	const rootName = rootMember ? maskFemaleName(rootMember.full_name, rootMember.gender) : 'N/A';
+document.getElementById('statRootNameDisplay').innerText = `اعداد و شمار برائے: ${rootName}`;
+    document.getElementById('statMale').innerText = `${m} / ${f}`;
+    document.getElementById('statAlive').innerText = `${a} / ${d}`;
+
+    document.getElementById('statOldest').innerText = oldestMember ? maskFemaleName(oldestMember.full_name, oldestMember.gender) : 'N/A';
+    document.getElementById('statYoungest').innerText = youngestMember ? maskFemaleName(youngestMember.full_name, youngestMember.gender) : 'N/A';
+    
+    document.getElementById('statAvgAge').innerText = avgAge !== 'N/A' ? `${avgAge} yrs` : 'N/A'; // NEW
+    document.getElementById('statMostChildren').innerText = mostChildrenName; // NEW
+}
+
+
+// UPDATED FUNCTION: openAnalytics to ensure currentRootId scope is used
 function openAnalytics() {
-    // We only calculate stats for the currently selected root's descendants
-    if (!currentRootId || allMembersData.length === 0) {
+    // Check if a root is selected
+    if (!currentRootId) {
         document.getElementById('statTotal').innerText = '0';
-        document.getElementById('statMale').innerText = '0 / 0';
-        document.getElementById('statAlive').innerText = '0 / 0';
+        document.getElementById('statGenerations').innerText = '--'; // New reset
+        document.getElementById('statMale').innerText = '-- / --';
+        document.getElementById('statAlive').innerText = '-- / --';
         document.getElementById('statOldest').innerText = 'N/A';
         document.getElementById('statYoungest').innerText = 'N/A';
+        document.getElementById('statAvgAge').innerText = 'N/A'; // New reset
+        document.getElementById('statMostChildren').innerText = 'N/A'; // New reset
+        
+        // Show a message if root is not selected (optional)
+        const funBox = document.querySelector('#analyticsModal .analytics-fun-box');
+        funBox.innerHTML = '<div style="color:red; text-align:center; padding:10px;">Please select a Root Member first.</div>';
+
         document.getElementById("analyticsModal").style.display="flex";
         document.getElementById("myDropdown").classList.remove('show');
         return;
     }
 
+    // Get all members who are descendants of the current root, including the root itself
     const currentScope = getDescendantsAndSelf(currentRootId);
-    calculateAndRenderStats(currentScope);
+    
+   // *** NEW LINE 1 ***: Root Member کا آبجیکٹ ڈھونڈیں۔
+    const rootMember = allMembersData.find(m => m.id == currentRootId); 
+    
+    // *** UPDATED LINE 2 ***: rootMember کو calculateAndRenderStats میں بھیجیں۔
+    calculateAndRenderStats(currentScope, rootMember);
     
     document.getElementById("analyticsModal").style.display="flex";
     document.getElementById("myDropdown").classList.remove('show');
@@ -2159,64 +2309,8 @@ function closeAnalytics(){
     document.getElementById("analyticsModal").style.display="none";
 }
 
-function calculateAndRenderStats(data) {
-    let total = data.length;
-    let m = 0; // Male count
-    let f = 0; // Female count
-    let a = 0; // Alive count
-    let d = 0; // Deceased count
-    let oldestDob = '2100-01-01'; // Future date (to find the earliest DOB)
-    let oldestMember = null;
-    let youngestDob = '1900-01-01'; // Past date (to find the latest DOB)
-    let youngestMember = null;
+// ... (Rest of site initialization) ...
 
-    data.forEach(x=>{
-        // Gender counting
-        if(x.gender) {
-            if(x.gender.toLowerCase().startsWith('m')) m++;
-            else f++;
-        }
-
-        // Alive/Deceased counting
-        if(x.is_alive!==undefined){
-            if(x.is_alive) a++;
-            else d++;
-        }
-
-        // Oldest/Youngest calculation
-        if (x.dob) {
-            // Find oldest (earliest DOB)
-            if (x.dob < oldestDob) {
-                oldestDob = x.dob;
-                oldestMember = x;
-            }
-            // Find youngest (latest DOB) - but only count alive members for meaningful 'youngest'
-            if (x.dob > youngestDob && x.is_alive) {
-                youngestDob = x.dob;
-                youngestMember = x;
-            }
-        }
-    });
-
-    document.getElementById('statTotal').innerText = total;
-    document.getElementById('statMale').innerText = `${m} / ${f}`;
-    document.getElementById('statAlive').innerText = `${a} / ${d}`;
-
-    if (oldestMember) {
-        document.getElementById('statOldest').innerText = maskFemaleName(oldestMember.full_name, oldestMember.gender);
-    } else {
-        document.getElementById('statOldest').innerText = 'N/A';
-    }
-
-    if (youngestMember) {
-        document.getElementById('statYoungest').innerText = maskFemaleName(youngestMember.full_name, youngestMember.gender);
-    } else {
-        document.getElementById('statYoungest').innerText = 'N/A';
-    }
-}
-
-
-// --- Site Initialization ---
 async function loadSiteSettings() {
     // Select all columns to ensure 'female-pass' is fetched
     const { data } = await _supabase.from('site_config').select('*').limit(1); 

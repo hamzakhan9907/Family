@@ -27,6 +27,9 @@ let isHorizontal = false;
 // NEW Global Sort State for All Members Table
 let currentSortColumn = 'full_name'; 
 let currentSortDirection = 'asc'; 
+
+// --- NEW: Zoom Global Variable ---
+let currentZoom = 1; 
 </script>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -962,6 +965,31 @@ input:checked + .slider:before {
 .shajra-horizontal-tree ul ul > li:only-child::after { 
     border-left: 1px solid #8d6e63 !important;
 }
+
+/* ---------- NEW: ZOOM CONTROLS STYLES ---------- */
+.zoom-btn {
+    background: #ffffff;
+    color: #2c3e50;
+    border: 1px solid #bdc3c7;
+    padding: 5px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s;
+}
+.zoom-btn:hover {
+    background: #e0e0e0;
+    color: #000;
+}
+/* Ensure the tree scales smoothly */
+#visualTreeContainer > ul {
+    transition: transform 0.3s ease-out;
+    transform-origin: top center; /* Zoom center se hoga */
+}
+/* Horizontal mode me zoom left se start ho taake structure kharab na ho */
+.shajra-horizontal-tree > ul {
+    transform-origin: top left !important;
+}
 </style>
 </head>
 <body>
@@ -999,7 +1027,14 @@ input:checked + .slider:before {
         </select>
     </div>
     <h1 class="family-name-display" id="currentFamilyName"><i class="fa-solid fa-sitemap"></i> Loading...</h1>
+    
     <div class="shajra-utility-container">
+        <div class="zoom-controls" style="display:flex; gap:5px; margin-right:10px;">
+            <button onclick="zoomTree('out')" class="zoom-btn" title="Zoom Out"><i class="fa-solid fa-minus"></i></button>
+            <button onclick="zoomTree('reset')" class="zoom-btn" title="Reset Zoom"><i class="fa-solid fa-arrows-rotate"></i></button>
+            <button onclick="zoomTree('in')" class="zoom-btn" title="Zoom In"><i class="fa-solid fa-plus"></i></button>
+        </div>
+
         <button id="toggleViewBtn" onclick="toggleView()">
             <i class="fa-solid fa-expand"></i> Horizontal
         </button>
@@ -1492,7 +1527,7 @@ async function renderAndShowDetailModal(data) {
             <div class="modal-data-row"><span>Date of Birth</span><span>${dobText}</span></div>
             ${data.is_alive ? '' : `<div class="modal-data-row"><span>Date of Death</span><span>${dodText}</span></div>`}
             ${spouseHtml}
-            <div class="modal-data-row"><span>Phone/Contact</span><span>${phoneText}</span></div>
+            
         </div>
     `;
 
@@ -2024,6 +2059,12 @@ async function loadFamilyTree(rootId, pathIds = []) {
 
     container.innerHTML = rootHtml;
     
+    // --- NEW: Reset zoom when tree loads ---
+    currentZoom = 1; 
+    const newTree = container.querySelector('ul');
+    if(newTree) newTree.style.transform = 'scale(1)';
+    // ---------------------------------------
+    
     // --- END MODIFICATION TO INCLUDE ROOT MEMBER ---
 
     // If a path is provided (from a search), expand it now
@@ -2168,6 +2209,32 @@ async function loadSiteSettings() {
         document.getElementById('dynamicPhone').innerText=data[0].phone; 
         document.getElementById('dynamicWhatsapp').href = `https://wa.me/${data[0].whatsapp.replace(/[^0-9+]/g, '')}`;
         document.getElementById('featuresList').innerHTML=(data[0].features||"").split(',').map(f=>`<li>${f.trim()}</li>`).join('');
+    }
+}
+
+// --- NEW: Zoom Logic ---
+function zoomTree(action) {
+    const treeContainer = document.querySelector('#visualTreeContainer > ul');
+    if (!treeContainer) return;
+
+    if (action === 'in') {
+        currentZoom += 0.1; // Increase by 10%
+    } else if (action === 'out') {
+        if (currentZoom > 0.3) { // Minimum limit 0.3
+            currentZoom -= 0.1;
+        }
+    } else if (action === 'reset') {
+        currentZoom = 1; // Reset to 100%
+    }
+
+    // Apply the zoom
+    treeContainer.style.transform = `scale(${currentZoom})`;
+    
+    // Optional: Adjust margins if zoomed out heavily to keep it centered
+    if(currentZoom < 1 && !isHorizontal) {
+        treeContainer.style.width = '100%';
+    } else {
+        treeContainer.style.width = 'max-content';
     }
 }
 

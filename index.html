@@ -708,12 +708,21 @@ input:checked + .slider:before {
 /* ---------- FAMILY TREE STYLES (Vertical Default) ------------------------------- */
 /* ------------------------------------------------------------- */
 .family-tree { 
-    font-family: 'Inter', sans-serif; 
-    text-align: center; 
-    padding: 30px 10px; 
-    background-color: #fcfbf6; 
-    overflow-x: auto; 
-    min-height: 400px; 
+   width: 100%;
+    min-height: 600px;
+    background-color: #fcfbf6; /* Aik halka sa "parchment" paper jaisa color */
+    background-image: 
+        radial-gradient(#e5e5f7 0.5px, transparent 0.5px), 
+        radial-gradient(#e5e5f7 0.5px, #fcfbf6 0.5px); /* Halka sa dot grid pattern */
+    background-size: 20px 20px;
+    overflow: auto; /* Scroll bars khud ba khud aayengi */
+    display: flex;
+    justify-content: center; /* Tree hamesha beech mein rahegi */
+    padding: 50px;
+    border-radius: 12px;
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.05); /* Thora sa depth effect */
+    cursor: grab; /* Hath ka nishan taake pata chale scroll ho sakta hai */
+    border: 1px solid #e0e0e0; 
 }
 .family-tree ul { 
     padding-top: 25px; 
@@ -728,7 +737,17 @@ input:checked + .slider:before {
 /* Standard Vertical Tree Connectors (Unchanged) */
 .family-tree > ul { padding-top: 0; }
 .family-tree li { list-style-type: none; position: relative; padding: 25px 15px 0 15px; flex-shrink: 0; transition: all 0.5s ease-in-out; }
-.family-tree > ul > li { padding-top: 0; } /* Ensures the Root LI has no top padding */
+.family-tree > ul > li { border: 1px solid #ccc;
+    padding: 10px 15px;
+    text-decoration: none;
+    color: #333;
+    font-family: 'Jameel Noori Nastaleeq', 'Segoe UI', serif; /* Urdu font support */
+    font-size: 14px;
+    display: inline-block;
+    border-radius: 8px;
+    background-color: #fff;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transition: all 0.3s ease; } /* Ensures the Root LI has no top padding */
 .family-tree li .member-card-wrapper { border: 2px solid #a0522d; background-color: #fff8e1; padding: 10px; text-decoration: none; display: inline-flex; flex-direction: column; align-items: center; border-radius: 12px; transition: all 0.3s ease; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); min-width: 140px; position: relative; cursor: pointer; }
 .family-tree li .member-card-wrapper:hover { background: #e7c29e; border-color: #a0522d; transform: translateY(-2px); box-shadow: 0 6px 10px -1px rgba(0, 0, 0, 0.15); }
 /* Custom style for icon placeholder */
@@ -1058,7 +1077,7 @@ input:checked + .slider:before {
         </div>
         
         <button id="downloadImageBtn" onclick="downloadTreeImage()" title="Download Tree as Image">
-            <i class="fa-solid fa-download"></i> Download
+            <i class="fa-solid fa-download"></i> Save as Image
         </button>
 
         <button id="toggleViewBtn" onclick="toggleView()">
@@ -1103,9 +1122,8 @@ input:checked + .slider:before {
         <span class="shajra-modal-close-x" onclick="closeAnalytics()">&times;</span>
         <div class="shajra-modal-title"><i class="fa-solid fa-chart-pie"></i> فیملی کے اعداد و شمار</div>
 		<div id="statRootNameDisplay" style="font-size: 14px; font-weight: 600; color: #444; margin-bottom: 15px;"></div>
-        <div class="analytics-stats-grid" id="statsGrid">
-		
-        <div class="analytics-stats-grid">
+        
+		 <div class="analytics-stats-grid">
             <div class="analytics-stat-card"><span class="stat-number" id="statTotal">--</span><span class="stat-urdu">کل ممبران</span></div>
             <div class="analytics-stat-card"><span class="stat-number" id="statGenerations">--</span><span class="stat-urdu">کُل نسلیں (Generations)</span></div> <div class="analytics-stat-card"><span class="stat-number" id="statMale">-- / --</span><span class="stat-urdu">مرد / عورت</span></div>
             <div class="analytics-stat-card"><span class="stat-number" id="statAlive">-- / --</span><span class="stat-urdu">زندہ / انتقال</span></div>
@@ -2258,7 +2276,7 @@ function calculateAndRenderStats(data, rootMember ) {
     document.getElementById('statTotal').innerText = total;
     document.getElementById('statGenerations').innerText = generations; // NEW
 	const rootName = rootMember ? maskFemaleName(rootMember.full_name, rootMember.gender) : 'N/A';
-document.getElementById('statRootNameDisplay').innerText = `اعداد و شمار برائے: ${rootName}`;
+document.getElementById('statRootNameDisplay').innerText = `ریکارڈ: ${rootName}`;
     document.getElementById('statMale').innerText = `${m} / ${f}`;
     document.getElementById('statAlive').innerText = `${a} / ${d}`;
 
